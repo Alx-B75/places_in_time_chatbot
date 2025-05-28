@@ -1,8 +1,13 @@
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from pydantic import BaseModel
 from dotenv import load_dotenv
 import os
 from openai import OpenAI
+from sqlalchemy.orm import Session
+from backend.database import SessionLocal
+from backend import crud, schemas
+
+
 import requests
 
 load_dotenv()
@@ -10,6 +15,13 @@ load_dotenv()
 app = FastAPI()
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 
 class Query(BaseModel):
@@ -19,8 +31,8 @@ class Query(BaseModel):
     question: str
 
 
-@app.post("/ask")
-def ask_question(query: Query):
+@app.post("/ask", response_model=schemas.ChatRead)
+def ask_question(query: schemas.ChatCreate, db: Session = Depends(get_db)):
     """
         Takes a question and returns an answer from OpenAI GPT-4o-mini.
 
@@ -40,10 +52,27 @@ def ask_question(query: Query):
             temperature=0.7
         )
         answer = response.choices[0].message.content
-        return {"answer": answer}
+
+        chat = schemas.ChatCreate(
+            question=query.question,
+            answer=answer,
+            user=query.user,
+            model_used="gpt-4o-mini",
+            source_page=query.source_page,
+        )
+        return crud.create_chat(db, chat)
 
     except Exception as e:
         return {"error": str(e)}
+
+
+@app.get("/chats", response_model=list[schemas.ChatRead])
+def get_chats(limit: int = 100, db: Session = Depends(get_db)):
+    """
+    Get the most recent chat entries from the database.
+    """
+    return crud.get_all_chats(db, limit=limit)
+
 
 # ---------------------------------------------------------------
 # NOTE: Hugging Face endpoints (2 variants) currently commented out
