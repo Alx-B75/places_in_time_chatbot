@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from datetime import datetime
 
@@ -21,9 +21,25 @@ class Chat(Base):
     __tablename__ = "chats"
 
     id = Column(Integer, primary_key=True, index=True)
-    user = Column(String, nullable=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    user_ref = relationship("User", back_populates="chats")
     question = Column(Text, nullable=False)
     answer = Column(Text, nullable=False)
     model_used = Column(String, nullable=True)
     source_page = Column(String, nullable=True)
     timestamp = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User", back_populates="chats")
+
+
+class User(Base):
+    """
+    Represents a user who can submit chats.
+    """
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, unique=True, index=True, nullable=False)
+    hashed_password = Column(String, nullable=False)
+
+    chats = relationship("Chat", back_populates="user", cascade="all, delete")

@@ -2,31 +2,58 @@ from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
 
+class UserCreate(BaseModel):
+    """
+    Accepts user input for registration – expects a username and plain-text password.
+    """
+    username: str
+    # will be hashed in another development
+    password: str
+
+
+class UserRead(BaseModel):
+    """
+    Returns user data after registration – excludes password.
+    """
+    id: int
+    username: str
+
+    model_config = {"from_attributes": True}
+
+
+class ChatCreateRequest(BaseModel):
+    """
+    Input schema for /ask endpoint - client sends only these fields.
+    """
+    question: str
+    user_id: int
+    model_used: Optional[str] = None
+    source_page: Optional[str] = None
+
 
 class ChatCreate(BaseModel):
     """
-    This class is used when creating a new chat entry record.
+    Internal schema used for DB creation.
     """
-    user: Optional[str] = None
     question: str
     answer: str
+    user_id: int
     model_used: Optional[str] = None
     source_page: Optional[str] = None
 
 
 class ChatRead(BaseModel):
     """
-    This is used when returning a chat record entry from the database.
+    Output schema - data returned after creation or reading.
     """
     id: int
-    user: Optional[str]
     question: str
     answer: str
-    model_used: Optional[str]
-    source_page: Optional[str]
+    user_id: int
+    model_used: Optional[str] = None
+    source_page: Optional[str] = None
     timestamp: datetime
 
-    class Config:
-        model_config = {
+    model_config = {
         "from_attributes": True
     }
