@@ -1,4 +1,5 @@
 from fastapi import Depends, FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
 import os
@@ -8,11 +9,25 @@ from backend.database import get_db, SessionLocal
 from backend import crud, schemas
 
 
-import requests
-
 load_dotenv()
 
 app = FastAPI()
+
+origins = [
+    "http://localhost:63342",
+    "http://localhost",
+    "http://localhost:8080",
+    "http://127.0.0.1",
+    "http://127.0.0.1:8080",
+    ]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,   # or ["*"] to allow all
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
@@ -67,7 +82,7 @@ def ask_question(query: schemas.ChatCreateRequest, db: Session = Depends(get_db)
             source_page=query.source_page,
         )
         db_chat = crud.create_chat(db, chat)
-        return db, chat
+        return db_chat
 
     except Exception as e:
         return {"error": str(e)}

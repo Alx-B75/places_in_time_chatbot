@@ -22,7 +22,6 @@ class Chat(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    user_ref = relationship("User", back_populates="chats")
     question = Column(Text, nullable=False)
     answer = Column(Text, nullable=False)
     model_used = Column(String, nullable=True)
