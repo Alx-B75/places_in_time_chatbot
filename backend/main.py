@@ -6,7 +6,7 @@ import os
 from openai import OpenAI
 from sqlalchemy.orm import Session
 from backend.database import get_db, SessionLocal
-from backend import crud, schemas
+from backend import crud, schemas, models
 
 
 load_dotenv()
@@ -168,6 +168,34 @@ def complete_chat(request: schemas.ChatCompletionRequest, db: Session = Depends(
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"OpenAI call failed: {str(e)}")
+
+
+@app.post("/threads", response_model=schemas.ThreadRead)
+def create_thread(thread: schemas.ThreadCreate, db: Session = Depends(get_db)):
+    """
+    Create a new conversation thread for a user.
+    """
+    return crud.create_thread(db, thread)
+
+
+@app.get("/threads/user/{user_id}", response_model=list[schemas.ThreadRead])
+def list_user_threads(user_id: int, db: Session = Depends(get_db)):
+    """
+    List all threads belonging to a specific user.
+    """
+    return crud.get_threads_by_user(db, user_id)
+
+
+@app.get("/messages/thread/{thread_id}", response_model=list[schemas.ChatMessageRead])
+def get_messages_by_thread(thread_id: int, limit: int = 50, db: Session = Depends(get_db)):
+    """
+    Retrieve chat messages for a given thread.
+    """
+    return db.query(models.Chat)\
+        .filter(models.Chat.thread_id == thread_id)\
+        .order_by(models.Chat.timestamp.asc())\
+        .limit(limit)\
+        .all()
 
 
 

@@ -130,3 +130,30 @@ def get_messages_by_user(db: Session, user_id: int, limit: int = 50):
         .all()
     )
 
+
+def create_thread(db: Session, thread: schemas.ThreadCreate):
+    """
+    Create a new thread for a given user.
+    """
+    db_thread = models.Thread(
+        user_id=thread.user_id,
+        title=thread.title
+    )
+    db.add(db_thread)
+    db.commit()
+    db.refresh(db_thread)
+    return db_thread
+
+
+def get_threads_by_user(db: Session, user_id: int):
+    """
+    Retrieve all threads belonging to a user.
+    """
+    return (
+        db.query(models.Thread)
+        .filter(models.Thread.user_id == user_id)
+        .order_by(models.Thread.created_at.desc())
+        .all()
+    )
+
+

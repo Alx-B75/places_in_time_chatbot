@@ -28,7 +28,7 @@ class Chat(Base):
     message = Column(Text, nullable=False)
     model_used = Column(String, nullable=True)
     source_page = Column(String, nullable=True)
-    thread_id = Column(Integer, nullable=True)
+    thread_id = Column(Integer, ForeignKey("threads.id"), nullable=True)
     summary_of = Column(String, nullable=True)
     timestamp = Column(DateTime, default=datetime.utcnow)
 
@@ -47,3 +47,19 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
 
     chats = relationship("Chat", back_populates="user", cascade="all, delete")
+    threads = relationship("Thread", back_populates="user", cascade="all, delete")
+
+
+class Thread(Base):
+    """
+    Represents a conversation thread grouping related messages.
+    """
+    __tablename__ = "threads"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    title = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User", back_populates="threads")
+    messages = relationship("Chat", backref="thread")

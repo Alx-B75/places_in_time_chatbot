@@ -94,3 +94,23 @@ class ChatCompletionRequest(BaseModel):
     model_used: Optional[str] = "gpt-4o-mini"
     source_page: Optional[str] = None
     thread_id: Optional[int] = None
+
+
+class ThreadCreate(BaseModel):
+    """
+    Schema for creating a new conversation thread.
+    """
+    user_id: int
+    title: Optional[str] = None
+
+
+class ThreadRead(ThreadCreate):
+    """
+    Schema for reading an existing thread with metadata.
+    """
+    id: int
+    created_at: datetime
+
+    model_config = {
+        "from_attributes": True
+    }
