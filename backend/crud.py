@@ -66,3 +66,67 @@ def create_user(db: Session, user: schemas.UserCreate):
     db.refresh(db_user)
     return db_user
 
+def create_chat_message(db: Session, chat: schemas.ChatMessageCreate) -> models.Chat:
+    """
+    Create a new message entry for the role-based chat system.
+
+    Args:
+        db (Session): SQLAlchemy session.
+        chat (ChatMessageCreate): A single chat message with role, content, and metadata.
+
+    Returns:
+        Chat: The stored message instance.
+    """
+    db_chat = models.Chat(
+        user_id=chat.user_id,
+        role=chat.role,
+        message=chat.message,
+        model_used=chat.model_used,
+        source_page=chat.source_page,
+        thread_id=chat.thread_id,
+        summary_of=chat.summary_of
+    )
+    db.add(db_chat)
+    db.commit()
+    db.refresh(db_chat)
+    return db_chat
+
+def get_messages_by_user(db: Session, user_id: int, limit: int = 50):
+    """
+    Get recent chat messages by user_id, ordered by timestamp.
+    """
+    return db.query(models.Chat)\
+             .filter(models.Chat.user_id == user_id)\
+             .order_by(models.Chat.timestamp.asc())\
+             .limit(limit)\
+             .all()
+
+
+def get_messages_by_thread(db: Session, thread_id: int, limit: int = 50):
+    return db.query(models.Chat)\
+             .filter(models.Chat.thread_id == thread_id)\
+             .order_by(models.Chat.timestamp.asc())\
+             .limit(limit)\
+             .all()
+
+
+def get_messages_by_user(db: Session, user_id: int, limit: int = 50):
+    """
+    Retrieve chat messages for a specific user, ordered by timestamp ascending.
+
+    Args:
+        db (Session): SQLAlchemy DB session.
+        user_id (int): The user whose messages to retrieve.
+        limit (int): Max number of messages to return.
+
+    Returns:
+        List[Chat]: Messages ordered by timestamp ascending.
+    """
+    return (
+        db.query(models.Chat)
+        .filter(models.Chat.user_id == user_id)
+        .order_by(models.Chat.timestamp.asc())
+        .limit(limit)
+        .all()
+    )
+

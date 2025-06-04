@@ -96,6 +96,80 @@ def get_chats(limit: int = 100, db: Session = Depends(get_db)):
     """
     return crud.get_all_chats(db, limit=limit)
 
+@app.post("/messages", response_model=schemas.ChatMessageRead)
+def create_message(chat: schemas.ChatMessageCreate, db: Session = Depends(get_db)):
+    """
+    Create a single role-based message (user, assistant, system, or summary).
+    """
+    return crud.create_chat_message(db=db, chat=chat)
+
+@app.get("/messages/user/{user_id}", response_model=list[schemas.ChatMessageRead])
+def get_user_messages(user_id: int, limit: int = 50, db: Session = Depends(get_db)):
+    """
+    Retrieve up to 'limit' chat messages for a given user_id.
+    """
+    return crud.get_messages_by_user(db, user_id, limit)
+
+
+@app.get("/messages/user/{user_id}", response_model=list[schemas.ChatMessageRead])
+def get_user_messages(user_id: int, limit: int = 50, db: Session = Depends(get_db)):
+    """
+    Retrieve up to 'limit' messages for a given user ID.
+    """
+    return crud.get_messages_by_user(db, user_id, limit)
+
+
+@app.post("/chat/complete", response_model=schemas.ChatMessageRead)
+def complete_chat(request: schemas.ChatCompletionRequest, db: Session = Depends(get_db)):
+    """
+    Accept a new user message, retrieve chat history, call OpenAI, return and store assistant response.
+    """
+    # Store the user message first
+    user_message = crud.create_chat_message(db, schemas.ChatMessageCreate(
+        user_id=request.user_id,
+        role="user",
+        message=request.message,
+        model_used=request.model_used,
+        source_page=request.source_page,
+        thread_id=request.thread_id
+    ))
+
+    # Retrieve recent message history
+    history = crud.get_messages_by_user(db, request.user_id, limit=10)
+
+    # Build OpenAI messages
+    messages = [{"role": "system", "content": "You are a helpful and accurate historical guide."}]
+    for msg in history:
+        messages.append({"role": msg.role, "content": msg.message})
+
+    # Add the new user message last
+    messages.append({"role": "user", "content": request.message})
+
+    # Send to OpenAI
+    try:
+        response = client.chat.completions.create(
+            model=request.model_used,
+            messages=messages,
+            temperature=0.7
+        )
+        answer = response.choices[0].message.content
+
+        # Store assistant reply
+        assistant_message = crud.create_chat_message(db, schemas.ChatMessageCreate(
+            user_id=request.user_id,
+            role="assistant",
+            message=answer,
+            model_used=request.model_used,
+            source_page=request.source_page,
+            thread_id=request.thread_id
+        ))
+
+        return assistant_message
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"OpenAI call failed: {str(e)}")
+
+
 
 # ---------------------------------------------------------------
 # NOTE: Hugging Face endpoints (2 variants) currently commented out
