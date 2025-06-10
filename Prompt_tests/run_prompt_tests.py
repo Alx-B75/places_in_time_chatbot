@@ -44,11 +44,11 @@ prompt_matrix = [
 
 # Define models — OpenAI and OpenRouter
 models = [
-    "gpt-4o",                  # OpenAI
-    "gpt-3.5-turbo",           # OpenAI
-    "anthropic/claude-3-opus", # OpenRouter
-    "google/gemini-pro",       # OpenRouter
-    "mistralai/mixtral-8x7b"   # OpenRouter
+    "gpt-4o",                                   # OpenAI
+    "gpt-3.5-turbo",                            # OpenAI
+    "anthropic/claude-3-opus",                  # OpenRouter
+    "google/gemini-2.5-pro-exp-03-25",          # OpenRouter
+    "mistralai/mistral-small-3.1-24b-instruct"  # OpenRouter
 ]
 
 # Approximate cost per 1K tokens (USD)
@@ -56,8 +56,8 @@ cost_per_token = {
     "gpt-4o": 0.005,
     "gpt-3.5-turbo": 0.001,
     "anthropic/claude-3-opus": 0.010,
-    "google/gemini-pro": 0.0025,
-    "mistralai/mixtral-8x7b": 0.0008
+    "google/gemini-2.5-pro-exp-03-25": 0.0020,
+    "mistralai/mistral-small-3.1-24b-instruct": 0.0008
 }
 
 results = []
