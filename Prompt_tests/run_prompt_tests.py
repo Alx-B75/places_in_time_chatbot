@@ -1,18 +1,24 @@
 """
 Prompt Testing Script for Places-in-Time Project
-Compatible with openai >= 1.0.0
+Supports OpenAI and OpenRouter (Claude, Gemini, Mistral, etc.)
 """
 
 import os
 import pandas as pd
-from datetime import datetime
-from openai import OpenAI
+from datetime import datetime, UTC
 from dotenv import load_dotenv
+from openai import OpenAI
 
 load_dotenv()
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
+openrouter_client = OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key=os.getenv("OPENROUTER_API_KEY")
+)
+
+# Define prompts
 prompt_matrix = [
     {
         "technique": "Zero-shot",
@@ -34,14 +40,30 @@ prompt_matrix = [
         "technique": "Impersonation",
         "prompt": "You are Æthelflæd, please stay in character. Explain who you are and your place in history as though you are speaking to an intelligent young child around 10-year-old.",
     }
-
 ]
 
-models = ["gpt-4o", "gpt-3.5-turbo"]
+# Define models — OpenAI and OpenRouter
+models = [
+    "gpt-4o",                  # OpenAI
+    "gpt-3.5-turbo",           # OpenAI
+    "anthropic/claude-3-opus", # OpenRouter
+    "google/gemini-pro",       # OpenRouter
+    "mistralai/mixtral-8x7b"   # OpenRouter
+]
+
+# Approximate cost per 1K tokens (USD)
+cost_per_token = {
+    "gpt-4o": 0.005,
+    "gpt-3.5-turbo": 0.001,
+    "anthropic/claude-3-opus": 0.010,
+    "google/gemini-pro": 0.0025,
+    "mistralai/mixtral-8x7b": 0.0008
+}
 
 results = []
 
 for model in models:
+    client = openrouter_client if "/" in model else openai_client
     for test in prompt_matrix:
         try:
             response = client.chat.completions.create(
@@ -56,7 +78,7 @@ for model in models:
             usage = response.usage
 
             results.append({
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
                 "technique": test["technique"],
                 "model": model,
                 "prompt": test["prompt"],
@@ -64,12 +86,12 @@ for model in models:
                 "prompt_tokens": usage.prompt_tokens,
                 "completion_tokens": usage.completion_tokens,
                 "total_tokens": usage.total_tokens,
-                "cost_usd": round((usage.total_tokens / 1000) * (0.005 if model == "gpt-4o" else 0.001), 5),
+                "cost_usd": round((usage.total_tokens / 1000) * cost_per_token.get(model, 0.001), 5),
             })
 
         except Exception as e:
             results.append({
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
                 "technique": test["technique"],
                 "model": model,
                 "prompt": test["prompt"],
