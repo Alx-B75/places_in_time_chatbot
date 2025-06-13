@@ -120,7 +120,7 @@ class HistoricalFigure(Base):
 
     def from_dict(self, data: dict):
         """
-        Populates fields from a Python dictionary, encoding JSON fields as strings.
+        Populates fields from a Python dictionary, encodes JSON fields as strings.
         """
         self.name = data.get("name")
         self.slug = data.get("slug")
@@ -138,3 +138,18 @@ class HistoricalFigure(Base):
         self.birth_year = data.get("birth_year")
         self.death_year = data.get("death_year")
         self.verified = 1 if data.get("verified") else 0
+
+class FigureContext(Base):
+    """
+    SQLAlchemy model representing addtnl cntxt data for a historical figure.
+    Stores orig source content for use in chatbot for grounding and detail.
+    """
+    __tablename__ = "figure_contexts"
+
+    id = Column(Integer, primary_key=True)
+    figure_slug = Column(String, index=True)
+    source_name = Column(String)
+    source_url = Column(String)
+    content_type = Column(String)
+    content = Column(Text)
+    is_manual = Column(Integer, default=0)
