@@ -81,14 +81,24 @@ class FigureEnricher:
 
     def fetch_dbpedia_resource(self):
         """
-        Fetch the DBpedia resource link if available.
-        Adds DBpedia page and source URL to the data.
+        Fetch the DBpedia abstract (summary) and resource links if available.
+        Adds DBpedia page, source URL, and summary to the data.
         """
-        dbpedia_url = f"http://dbpedia.org/data/{quote(self.name.replace(' ', '_'))}.json"
+        name_encoded = quote(self.name.replace(' ', '_'))
+        dbpedia_url = f"http://dbpedia.org/data/{name_encoded}.json"
         response = requests.get(dbpedia_url)
 
         if response.status_code == 200:
-            self.data["wiki_links"]["dbpedia"] = f"http://dbpedia.org/page/{quote(self.name.replace(' ', '_'))}"
+            data = response.json()
+            resource_uri = f"http://dbpedia.org/resource/{name_encoded}"
+
+            abstract_entries = data.get(resource_uri, {}).get("http://dbpedia.org/ontology/abstract", [])
+            for entry in abstract_entries:
+                if entry.get("lang") == "en":
+                    self.data["dbpedia_summary"] = entry.get("value", "")
+                    break
+
+            self.data["wiki_links"]["dbpedia"] = f"http://dbpedia.org/page/{name_encoded}"
             self.data["sources"]["dbpedia"] = dbpedia_url
 
     def enrich(self) -> dict:
@@ -104,8 +114,4 @@ class FigureEnricher:
         return self.data
 
 
-if __name__ == "__main__":
-    name_input = input("Enter the name of a historical figure: ")
-    enricher = FigureEnricher(name_input)
-    enriched_result = enricher.enrich()
-    print(json.dumps(enriched_result, indent=2))
+
