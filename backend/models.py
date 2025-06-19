@@ -4,6 +4,7 @@ from sqlalchemy.orm import relationship
 from datetime import datetime
 
 from .database import Base
+from .figures_database import FigureBase
 
 
 class Chat(Base):
@@ -66,7 +67,7 @@ class Thread(Base):
     messages = relationship("Chat", backref="thread")
 
 
-class HistoricalFigure(Base):
+class HistoricalFigure(FigureBase):
     """
     SQLAlchemy model representing a historical figure relevant to a site
     in the Places in Time project.
@@ -93,6 +94,13 @@ class HistoricalFigure(Base):
     birth_year = Column(Integer)
     death_year = Column(Integer)
     verified = Column(Integer, default=0)
+
+    contexts = relationship(
+        "FigureContext",
+        backref="figure",
+        primaryjoin="HistoricalFigure.slug == foreign(FigureContext.figure_slug)",
+        lazy="selectin"
+    )
 
     def to_dict(self):
         """
@@ -139,7 +147,7 @@ class HistoricalFigure(Base):
         self.death_year = data.get("death_year")
         self.verified = 1 if data.get("verified") else 0
 
-class FigureContext(Base):
+class FigureContext(FigureBase):
     """
     SQLAlchemy model representing addtnl cntxt data for a historical figure.
     Stores orig source content for use in chatbot for grounding and detail.

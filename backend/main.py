@@ -6,10 +6,11 @@ from fastapi.requests import Request
 from pydantic import BaseModel
 from dotenv import load_dotenv
 import os
-from openai import OpenAI
+import openai
 from sqlalchemy.orm import Session
-from backend.database import get_db, SessionLocal
+from backend.database import get_db_chat, SessionLocal
 from backend import crud, schemas, models
+from backend.routers import figures
 from typing import Optional
 
 load_dotenv()
@@ -34,8 +35,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 class Query(BaseModel):
     """
@@ -45,7 +45,7 @@ class Query(BaseModel):
 
 
 @app.post("/register_user", response_class=HTMLResponse)
-async def register_user(request: Request, db: Session = Depends(get_db)):
+async def register_user(request: Request, db: Session = Depends(get_db_chat)):
     """
     Register a new user from form data and redirect to their thread page.
     If the username already exists, show an error.
@@ -68,7 +68,7 @@ async def register_user(request: Request, db: Session = Depends(get_db)):
 
 
 @app.post("/user/{user_id}/create_thread", response_class=HTMLResponse)
-async def create_thread_for_user(user_id: int, request: Request, db: Session = Depends(get_db)):
+async def create_thread_for_user(user_id: int, request: Request, db: Session = Depends(get_db_chat)):
     """
     Handle creation of a new thread for a user and redirect to the thread view.
     """
@@ -81,22 +81,10 @@ async def create_thread_for_user(user_id: int, request: Request, db: Session = D
     return RedirectResponse(url=f"/thread/{thread.id}", status_code=303)
 
 
-@app.post("/register", response_model=schemas.UserRead)
-def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    """
-    Register a new user with a username and password.
-    Returns the user ID and username.
-    """
-    existing_user = crud.get_user_by_username(db, user.username)
-    if existing_user:
-        raise HTTPException(status_code=400, detail="Username already exists")
-
-    return crud.create_user(db, user)
-
 
 
 @app.get("/user/{user_id}/threads", response_class=HTMLResponse)
-def user_threads(request: Request, user_id: int, db: Session = Depends(get_db)):
+def user_threads(request: Request, user_id: int, db: Session = Depends(get_db_chat)):
     """
     Display all chat threads associated with a given user ID.
 
@@ -124,7 +112,7 @@ def user_threads(request: Request, user_id: int, db: Session = Depends(get_db)):
 
 
 @app.post("/ask", response_model=schemas.ChatRead)
-def ask_question(query: schemas.ChatCreateRequest, db: Session = Depends(get_db)):
+def ask_question(query: schemas.ChatCreateRequest, db: Session = Depends(get_db_chat)):
     """
     Receive a user question, generate an answer using GPT, save the chat linked to the user,
     and return the saved chat entry.
@@ -134,7 +122,7 @@ def ask_question(query: schemas.ChatCreateRequest, db: Session = Depends(get_db)
         raise HTTPException(status_code=404, detail="User not found")
 
     try:
-        response = client.chat.completions.create(
+        response = openai.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "You are a helpful and accurate historical guide."},
@@ -160,14 +148,14 @@ def ask_question(query: schemas.ChatCreateRequest, db: Session = Depends(get_db)
 
 
 @app.get("/chats", response_model=list[schemas.ChatRead])
-def get_chats(limit: int = 100, db: Session = Depends(get_db)):
+def get_chats(limit: int = 100, db: Session = Depends(get_db_chat)):
     """
     Get the most recent chat entries from the database.
     """
     return crud.get_all_chats(db, limit=limit)
 
 @app.post("/messages", response_model=schemas.ChatMessageRead)
-def create_message(chat: schemas.ChatMessageCreate, db: Session = Depends(get_db)):
+def create_message(chat: schemas.ChatMessageCreate, db: Session = Depends(get_db_chat)):
     """
     Create a single role-based message (user, assistant, system, or summary).
     """
@@ -175,7 +163,7 @@ def create_message(chat: schemas.ChatMessageCreate, db: Session = Depends(get_db
 
 
 @app.get("/messages/user/{user_id}", response_model=list[schemas.ChatMessageRead])
-def get_user_messages(user_id: int, limit: int = 50, db: Session = Depends(get_db)):
+def get_user_messages(user_id: int, limit: int = 50, db: Session = Depends(get_db_chat)):
     """
     Retrieve up to 'limit' messages for a given user ID.
     """
@@ -185,7 +173,7 @@ def get_user_messages(user_id: int, limit: int = 50, db: Session = Depends(get_d
 @app.post("/chat/complete", response_class=HTMLResponse)
 def chat_complete(
     request: Request,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db_chat),
     user_id: int = Form(...),
     message: str = Form(...),
     thread_id: Optional[int] = Form(None),
@@ -214,7 +202,7 @@ def chat_complete(
     formatted = [{"role": m.role, "content": m.message} for m in messages]
     formatted.insert(0, {"role": "system", "content": "You are a helpful and accurate historical guide."})
 
-    response = client.chat.completions.create(
+    response = openai.chat.completions.create(
         model="gpt-4o-mini",
         messages=formatted,
         temperature=0.7
@@ -237,7 +225,7 @@ def chat_complete(
 
 
 @app.post("/threads", response_model=schemas.ThreadRead)
-def create_thread(thread: schemas.ThreadCreate, db: Session = Depends(get_db)):
+def create_thread(thread: schemas.ThreadCreate, db: Session = Depends(get_db_chat)):
     """
     Create a new conversation thread for a user.
     """
@@ -245,7 +233,7 @@ def create_thread(thread: schemas.ThreadCreate, db: Session = Depends(get_db)):
 
 
 @app.get("/threads/user/{user_id}", response_model=list[schemas.ThreadRead])
-def list_user_threads(user_id: int, db: Session = Depends(get_db)):
+def list_user_threads(user_id: int, db: Session = Depends(get_db_chat)):
     """
     List all threads belonging to a specific user.
     """
@@ -253,7 +241,7 @@ def list_user_threads(user_id: int, db: Session = Depends(get_db)):
 
 
 @app.get("/messages/thread/{thread_id}", response_model=list[schemas.ChatMessageRead])
-def get_messages_by_thread(thread_id: int, limit: int = 50, db: Session = Depends(get_db)):
+def get_messages_by_thread(thread_id: int, limit: int = 50, db: Session = Depends(get_db_chat)):
     """
     Retrieve chat messages for a given thread.
     """
@@ -265,7 +253,7 @@ def get_messages_by_thread(thread_id: int, limit: int = 50, db: Session = Depend
 
 
 @app.get("/", response_class=HTMLResponse)
-def index(request: Request, db: Session = Depends(get_db)):
+def index(request: Request, db: Session = Depends(get_db_chat)):
     threads = crud.get_threads_by_user(db, user_id=1)  # Replace 1 with session later
     return templates.TemplateResponse("index.html", {
         "request": request,
@@ -274,7 +262,7 @@ def index(request: Request, db: Session = Depends(get_db)):
 
 
 @app.get("/thread/{thread_id}", response_class=HTMLResponse)
-def view_thread(thread_id: int, request: Request, db: Session = Depends(get_db)):
+def view_thread(thread_id: int, request: Request, db: Session = Depends(get_db_chat)):
     thread = db.query(models.Thread).filter(models.Thread.id == thread_id).first()
     if not thread:
         raise HTTPException(status_code=404, detail="Thread not found")
@@ -302,8 +290,8 @@ def select_user(user_id: int = Form(...)):
     return RedirectResponse(url=f"/user/{user_id}/threads", status_code=303)
 
 
-@app.post("/register_user")
-async def register_user(request: Request, db: Session = Depends(get_db)):
+@app.post("/register")
+async def register_api(request: Request, db: Session = Depends(get_db_chat)):
     """
     Handle user registration by extracting username and password from the HTML form
     and creating a new user in the database.
@@ -328,7 +316,7 @@ def get_create_thread_page(user_id: int, request: Request):
 
 
 @app.post("/user/{user_id}/create_thread", response_class=HTMLResponse)
-async def create_new_thread(user_id: int, request: Request, db: Session = Depends(get_db)):
+async def create_new_thread(user_id: int, request: Request, db: Session = Depends(get_db_chat)):
     """
     Handle submission of new thread form, save thread, then redirect.
     """
@@ -341,87 +329,5 @@ async def create_new_thread(user_id: int, request: Request, db: Session = Depend
     return RedirectResponse(url=f"/user/{user_id}/threads", status_code=303)
 
 
-# ---------------------------------------------------------------
-# NOTE: Hugging Face endpoints (2 variants) currently commented out
-# Reason:
-#   - Model call to `flan-t5-large` and others returned 401 or 404
-#   - Token was removed and public models tested without success
-#   - Curl tests confirm issue is not on our side
-#
-# Next steps:
-#   - Try a completely different approach or...
-#   - Test again with `sshleifer/tiny-gpt2` or another known-safe model
-#   - Confirm headers and token use are clean
-#   - Optional: switch to LM Studio or run models locally
-#
-# TODO: Fix Hugging Face call and re-enable `/ask_hf`
-# ---------------------------------------------------------------
-
-
-"""@app.post("/ask_hf")
-def ask_question_huggingface(query: Query):
-    try:
-        headers = {
-            "Authorization": f"Bearer {os.getenv('HF_API_TOKEN')}"
-        }
-
-        payload = {
-            "inputs": f"{query.question}",
-            "parameters": {"temperature": 0.7, "max_new_tokens": 256}
-        }
-
-        response = requests.post(
-            "https://api-inference.huggingface.co/models/google/flan-t5-large",
-            headers=headers,
-            json=payload,
-            timeout=60
-        )
-
-        # Handle non-JSON or failed responses
-        if response.status_code != 200:
-            return {
-                "error": f"Hugging Face returned status code {response.status_code}",
-                "detail": response.text
-            }
-
-        result = response.json()
-
-        if isinstance(result, list) and "generated_text" in result[0]:
-            return {"answer": result[0]["generated_text"]}
-        else:
-            return {"error": "Unexpected response format", "raw": result}
-
-    except Exception as e:
-        return {"error": str(e)}"""
-
-
-"""@app.post("/ask_hf")
-def ask_question_huggingface(query: Query):
-    try:
-        headers = {"Content-Type": "application/json"}
-
-        payload = {
-            "inputs": f"{query.question}",
-            "parameters": {"temperature": 0.7, "max_new_tokens": 50}
-        }
-
-        response = requests.post(
-            "https://api-inference.huggingface.co/models/sshleifer/tiny-gpt2",
-            headers=headers,
-            json=payload,
-            timeout=60
-        )
-
-        if response.status_code != 200:
-            return {
-                "error": f"Hugging Face returned status code {response.status_code}",
-                "detail": response.text
-            }
-
-        result = response.json()
-
-        return {"answer": result[0]["generated_text"]}
-
-    except Exception as e:
-        return {"error": str(e)}"""
+app.include_router(figures.router)
 

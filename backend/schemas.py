@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 class UserCreate(BaseModel):
     """
@@ -113,4 +113,53 @@ class ThreadRead(ThreadCreate):
 
     model_config = {
         "from_attributes": True
-    }
+        }
+
+
+class FigureContextRead(BaseModel):
+    """
+    Schema to return context entries tied to a historical figure.
+    """
+    id: int
+    figure_slug: str
+    source_name: Optional[str]
+    source_url: Optional[str]
+    content_type: Optional[str]
+    content: str
+    is_manual: int
+
+    class Config:
+        orm_mode = True
+
+
+class HistoricalFigureRead(BaseModel):
+    """
+    Summary schema for listing historical figures.
+    """
+    id: int
+    name: str
+    slug: str
+    era: Optional[str]
+    roles: Optional[str]
+    image_url: Optional[str]
+    short_summary: Optional[str]
+
+    class Config:
+        orm_mode = True
+
+
+class HistoricalFigureDetail(HistoricalFigureRead):
+    """
+    Detailed schema for a single historical figure with full data and context entries.
+    """
+    long_bio: Optional[str]
+    echo_story: Optional[str]
+    quote: Optional[str]
+    birth_year: Optional[int]
+    death_year: Optional[int]
+    main_site: Optional[str]
+    related_sites: Optional[str]
+    sources: Optional[str]
+    wiki_links: Optional[str]
+    verified: Optional[int]
+    contexts: List[FigureContextRead] = []

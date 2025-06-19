@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 from backend import models, schemas
 
 
@@ -157,3 +157,25 @@ def get_threads_by_user(db: Session, user_id: int):
     )
 
 
+def get_all_figures(db: Session, skip: int = 0, limit: int = 100):
+    """
+    Retrieve all historical figures with optional pagination.
+    """
+    return (
+        db.query(models.HistoricalFigure)
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
+
+def get_figure_by_slug(db: Session, slug: str):
+    """
+    Retrieve a single historical figure by slug, including related context entries.
+    """
+    return (
+        db.query(models.HistoricalFigure)
+        .filter(models.HistoricalFigure.slug == slug)
+        .options(selectinload(models.HistoricalFigure.contexts))
+        .first()
+    )
