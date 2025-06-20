@@ -12,6 +12,8 @@ from backend.database import get_db_chat, SessionLocal
 from backend import crud, schemas, models
 from backend.routers import figures
 from typing import Optional
+from backend.figures_database import FigureSessionLocal
+from backend.models import HistoricalFigure
 
 load_dotenv()
 
@@ -294,50 +296,74 @@ def get_messages_by_thread(thread_id: int, limit: int = 50, db: Session = Depend
 
 
 @app.post("/figures/ask", response_class=HTMLResponse)
-def ask_figure_html(
+async def ask_figure_submit(
     request: Request,
-    user_id: int = Form(...),
     figure_slug: str = Form(...),
+    user_id: int = Form(...),
     message: str = Form(...),
+    thread_id: Optional[int] = Form(None),
     db: Session = Depends(get_db_chat)
 ):
-    user = crud.get_user_by_id(db, user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    from backend.figures_database import FigureSessionLocal
-    from backend.models import HistoricalFigure
-
     fig_db = FigureSessionLocal()
     figure = fig_db.query(HistoricalFigure).filter(HistoricalFigure.slug == figure_slug).first()
-    system_prompt = figure.persona_prompt if figure and figure.persona_prompt else "You are a historical guide."
     fig_db.close()
 
-    client = OpenAI()
+    if not figure:
+        raise HTTPException(status_code=404, detail="Figure not found")
+
+    if thread_id:
+        thread = crud.get_thread_by_id(db, thread_id)
+        if not thread:
+            raise HTTPException(status_code=404, detail="Thread not found")
+    else:
+        thread_data = schemas.ThreadCreate(user_id=user_id, title=f"Chat with {figure.name}")
+        thread = crud.create_thread(db, thread=thread_data)
+        thread_id = thread.id
+
+    crud.create_chat_message(db, schemas.ChatMessageCreate(
+        user_id=user_id,
+        role="user",
+        message=message,
+        model_used="gpt-4o-mini",
+        source_page="figures/ask",
+        thread_id=thread_id
+    ))
+
+    system_prompt = figure.persona_prompt or "You are a helpful historical guide."
+
+    all_messages = crud.get_messages_by_thread(db, thread_id)
+    formatted = [{"role": m.role, "content": m.message} for m in all_messages]
+    formatted.insert(0, {"role": "system", "content": system_prompt})
 
     response = client.chat.completions.create(
         model="gpt-4o",
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": message}
-        ],
+        messages=formatted,
         temperature=0.7
     )
-    answer = response.choices[0].message.content
+    reply = response.choices[0].message.content
 
-    chat = schemas.ChatMessageCreate(
+    crud.create_chat_message(db, schemas.ChatMessageCreate(
         user_id=user_id,
         role="assistant",
-        message=answer,
+        message=reply,
         model_used="gpt-4o-mini",
         source_page="figures/ask",
-    )
-    db_msg = crud.create_chat_message(db, chat)
+        thread_id=thread_id
+    ))
+
+    updated_messages = crud.get_messages_by_thread(db, thread_id)
+
+    user_id_value = user_id
 
     return templates.TemplateResponse("ask_figure.html", {
         "request": request,
-        "response": db_msg
+        "figure": figure,
+        "thread": thread,
+        "messages": updated_messages,
+        "user_id_value": user_id_value
     })
+
+
 
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request, db: Session = Depends(get_db_chat)):
@@ -367,13 +393,49 @@ def view_thread(thread_id: int, request: Request, db: Session = Depends(get_db_c
         "user_id": thread.user_id,  # needed in next step
     })
 
+from typing import Optional
+from fastapi import Query
 
 @app.get("/figures/ask", response_class=HTMLResponse)
-def get_ask_figure_page(request: Request):
-    """
-    Serve the Ask a Historical Figure form page.
-    """
-    return templates.TemplateResponse("ask_figure.html", {"request": request})
+def get_ask_figure_page(
+    request: Request,
+    figure_slug: Optional[str] = Query(None),
+    thread_id: Optional[int] = None,
+    db: Session = Depends(get_db_chat)
+):
+    if not figure_slug:
+        figures = [
+            {"slug": "emperor-hadrian", "name": "Emperor Hadrian"},
+            {"slug": "flavius-cerialis", "name": "Flavius Cerialis"},
+            {"slug": "guy-fawkes", "name": "Guy Fawkes"},
+        ]
+        return templates.TemplateResponse("figure_select.html", {
+            "request": request,
+            "figures": figures
+        })
+
+    fig_db = FigureSessionLocal()
+    figure = fig_db.query(HistoricalFigure).filter(HistoricalFigure.slug == figure_slug).first()
+    fig_db.close()
+
+    if not figure:
+        raise HTTPException(status_code=404, detail="Figure not found")
+
+    thread = crud.get_thread_by_id(db, thread_id) if thread_id else None
+    messages = crud.get_messages_by_thread(db, thread_id) if thread else []
+
+    user_id_value = None
+    if messages and len(messages) > 0:
+        user_id_value = messages[0].user_id
+
+    return templates.TemplateResponse("ask_figure.html", {
+        "request": request,
+        "figure": figure,
+        "thread": thread,
+        "messages": messages,
+        "user_id_value": user_id_value
+    })
+
 
 
 

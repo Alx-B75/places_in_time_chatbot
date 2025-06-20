@@ -1,18 +1,63 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
     <title>Ask a Historical Figure – Places in Time</title>
     <style>
-        body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 2rem; }
-        .container { max-width: 700px; margin: auto; background: #fff; padding: 2rem; border-radius: 8px; }
-        input, textarea, select, button {
-            width: 100%; padding: 0.75rem; margin-top: 1rem;
-            border: 1px solid #ccc; border-radius: 4px;
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f4f4;
+            padding: 2rem;
         }
-        button { background: #0077cc; color: white; }
-        .response-box { margin-top: 2rem; background: #eef6ff; padding: 1rem; border-radius: 6px; }
-        .response-box h3 { margin-top: 0; }
+        .container {
+            max-width: 700px;
+            margin: auto;
+            background: #fff;
+            padding: 2rem;
+            border-radius: 8px;
+        }
+        input,
+        textarea,
+        select,
+        button {
+            width: 100%;
+            padding: 0.75rem;
+            margin-top: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background: #0077cc;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #005fa3;
+        }
+        .messages {
+            margin-top: 2rem;
+            background: #eef6ff;
+            padding: 1rem;
+            border-radius: 6px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .message {
+            margin-bottom: 1rem;
+        }
+        .message .role {
+            font-weight: bold;
+            color: #005fa3;
+        }
+        .message .content {
+            margin-left: 0.5rem;
+            white-space: pre-wrap;
+        }
+        label {
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -21,29 +66,41 @@
 
     <form action="/figures/ask" method="post">
         <label for="user_id">User ID:</label>
-        <input type="number" name="user_id" value="{{ response.user_id if response else '' }}" required>
+        <input
+            type="number"
+            name="user_id"
+            id="user_id"
+            value="{{ user_id_value or '' }}"
+            required
+        />
 
         <label for="figure_slug">Historical Figure:</label>
-        <select name="figure_slug" required>
-            <option value="emperor-hadrian" {% if response and response.source_page == 'figures/ask' %}selected{% endif %}>Emperor Hadrian</option>
-            <option value="flavius-cerialis">Flavius Cerialis</option>
-            <option value="guy-fawkes">Guy Fawkes</option>
+        <select name="figure_slug" id="figure_slug" required>
+            <option value="emperor-hadrian" {% if figure.slug == "emperor-hadrian" %}selected{% endif %}>Emperor Hadrian</option>
+            <option value="flavius-cerialis" {% if figure.slug == "flavius-cerialis" %}selected{% endif %}>Flavius Cerialis</option>
+            <option value="guy-fawkes" {% if figure.slug == "guy-fawkes" %}selected{% endif %}>Guy Fawkes</option>
         </select>
 
         <label for="message">Your Question:</label>
-        <textarea name="message" rows="4" required></textarea>
+        <textarea name="message" id="message" rows="4" required></textarea>
+
+        {% if thread %}
+          <input type="hidden" name="thread_id" value="{{ thread.id }}" />
+        {% endif %}
+
 
         <button type="submit">Ask</button>
     </form>
 
-    {% if response %}
-        <div class="response-box">
-            <h3>You asked:</h3>
-            <p><strong>User:</strong> {{ response.source_page_question or 'Your original question' }}</p>
-
-            <h3>Response:</h3>
-            <p><strong>{{ response.role.title() }}:</strong> {{ response.message }}</p>
-        </div>
+    {% if messages %}
+    <div class="messages" aria-live="polite" aria-label="Chat history">
+        {% for msg in messages %}
+            <div class="message">
+                <span class="role">{{ msg.role.title() }}:</span>
+                <span class="content">{{ msg.message }}</span>
+            </div>
+        {% endfor %}
+    </div>
     {% endif %}
 </div>
 </body>

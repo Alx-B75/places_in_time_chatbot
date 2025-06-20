@@ -70,6 +70,13 @@ def create_chat_message(db: Session, chat: schemas.ChatMessageCreate) -> models.
     db.refresh(db_chat)
     return db_chat
 
+def get_thread_by_id(db: Session, thread_id: int):
+    """
+    Get recent chat messages by thread id.
+    """
+    return db.query(models.Thread).filter(models.Thread.id == thread_id).first()
+
+
 def get_messages_by_user(db: Session, user_id: int, limit: int = 50):
     """
     Get recent chat messages by user_id, ordered by timestamp.
