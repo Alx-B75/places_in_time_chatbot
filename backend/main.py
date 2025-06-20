@@ -293,6 +293,52 @@ def get_messages_by_thread(thread_id: int, limit: int = 50, db: Session = Depend
         .all()
 
 
+@app.post("/figures/ask", response_class=HTMLResponse)
+def ask_figure_html(
+    request: Request,
+    user_id: int = Form(...),
+    figure_slug: str = Form(...),
+    message: str = Form(...),
+    db: Session = Depends(get_db_chat)
+):
+    user = crud.get_user_by_id(db, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    from backend.figures_database import FigureSessionLocal
+    from backend.models import HistoricalFigure
+
+    fig_db = FigureSessionLocal()
+    figure = fig_db.query(HistoricalFigure).filter(HistoricalFigure.slug == figure_slug).first()
+    system_prompt = figure.persona_prompt if figure and figure.persona_prompt else "You are a historical guide."
+    fig_db.close()
+
+    client = OpenAI()
+
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": message}
+        ],
+        temperature=0.7
+    )
+    answer = response.choices[0].message.content
+
+    chat = schemas.ChatMessageCreate(
+        user_id=user_id,
+        role="assistant",
+        message=answer,
+        model_used="gpt-4o-mini",
+        source_page="figures/ask",
+    )
+    db_msg = crud.create_chat_message(db, chat)
+
+    return templates.TemplateResponse("ask_figure.html", {
+        "request": request,
+        "response": db_msg
+    })
+
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request, db: Session = Depends(get_db_chat)):
     threads = crud.get_threads_by_user(db, user_id=1)  # Replace 1 with session later
@@ -320,6 +366,14 @@ def view_thread(thread_id: int, request: Request, db: Session = Depends(get_db_c
         "messages": messages,
         "user_id": thread.user_id,  # needed in next step
     })
+
+
+@app.get("/figures/ask", response_class=HTMLResponse)
+def get_ask_figure_page(request: Request):
+    """
+    Serve the Ask a Historical Figure form page.
+    """
+    return templates.TemplateResponse("ask_figure.html", {"request": request})
 
 
 

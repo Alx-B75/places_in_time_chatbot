@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Ask a Historical Figure – Places in Time</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 2rem; }
+        .container { max-width: 700px; margin: auto; background: #fff; padding: 2rem; border-radius: 8px; }
+        input, textarea, select, button {
+            width: 100%; padding: 0.75rem; margin-top: 1rem;
+            border: 1px solid #ccc; border-radius: 4px;
+        }
+        button { background: #0077cc; color: white; }
+        .response-box { margin-top: 2rem; background: #eef6ff; padding: 1rem; border-radius: 6px; }
+        .response-box h3 { margin-top: 0; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Ask a Historical Figure</h1>
+
+    <form action="/figures/ask" method="post">
+        <label for="user_id">User ID:</label>
+        <input type="number" name="user_id" value="{{ response.user_id if response else '' }}" required>
+
+        <label for="figure_slug">Historical Figure:</label>
+        <select name="figure_slug" required>
+            <option value="emperor-hadrian" {% if response and response.source_page == 'figures/ask' %}selected{% endif %}>Emperor Hadrian</option>
+            <option value="flavius-cerialis">Flavius Cerialis</option>
+            <option value="guy-fawkes">Guy Fawkes</option>
+        </select>
+
+        <label for="message">Your Question:</label>
+        <textarea name="message" rows="4" required></textarea>
+
+        <button type="submit">Ask</button>
+    </form>
+
+    {% if response %}
+        <div class="response-box">
+            <h3>You asked:</h3>
+            <p><strong>User:</strong> {{ response.source_page_question or 'Your original question' }}</p>
+
+            <h3>Response:</h3>
+            <p><strong>{{ response.role.title() }}:</strong> {{ response.message }}</p>
+        </div>
+    {% endif %}
+</div>
+</body>
+</html>
