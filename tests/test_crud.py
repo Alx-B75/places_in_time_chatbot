@@ -27,7 +27,7 @@ def test_create_and_read_chat():
     )
 
     # Create a chat record in the DB
-    created = crud.create_chat(db, test_data)
+    created = crud.create_chat_message(db, test_data)
 
     assert created.id is not None
     assert created.user == "test_user"

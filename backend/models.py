@@ -18,9 +18,12 @@ class Chat(Base):
         message (str): The content of the message.
         model_used (str, optional): Identifier for the AI model used (e.g. 'gpt-4o-mini').
         source_page (str, optional): Page or route that triggered the chat.
-        thread_id (int, optional): Identifier for conversation threads.
-        summary_of (str, optional): A reference for messages this is summarizing.
+        thread_id (int, optional): Foreign key to a thread grouping related messages.
+        summary_of (int, optional): Foreign key referencing another Chat message that this message summarizes.
         timestamp (datetime): UTC time the message was stored.
+        user (User): Relationship to the User who created the message.
+        thread (Thread): Relationship to the Thread this message belongs to.
+        summary_parent (Chat): Relationship to the parent Chat message being summarized, if applicable.
     """
     __tablename__ = "chats"
 
@@ -31,10 +34,13 @@ class Chat(Base):
     model_used = Column(String, nullable=True)
     source_page = Column(String, nullable=True)
     thread_id = Column(Integer, ForeignKey("threads.id"), nullable=True)
-    summary_of = Column(String, nullable=True)
+    summary_of = Column(Integer, ForeignKey("chats.id"), nullable=True)
     timestamp = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", back_populates="chats")
+    thread = relationship("Thread", back_populates="chats", lazy="joined")
+    summary_parent = relationship("Chat", remote_side=[id], lazy="joined")
+
 
 
 
@@ -64,7 +70,8 @@ class Thread(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", back_populates="threads")
-    messages = relationship("Chat", backref="thread")
+
+    chats = relationship("Chat", back_populates="thread", cascade="all, delete-orphan")
 
 
 class HistoricalFigure(FigureBase):
@@ -91,6 +98,7 @@ class HistoricalFigure(FigureBase):
     sources = Column(Text)
     wiki_links = Column(Text)
     quote = Column(Text)
+    persona_prompt = Column(Text, nullable=True)
     birth_year = Column(Integer)
     death_year = Column(Integer)
     verified = Column(Integer, default=0)
@@ -161,3 +169,5 @@ class FigureContext(FigureBase):
     content_type = Column(String)
     content = Column(Text)
     is_manual = Column(Integer, default=0)
+
+

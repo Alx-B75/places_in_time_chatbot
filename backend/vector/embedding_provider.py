@@ -1,16 +1,17 @@
 import os
+from openai import OpenAI
 
 USE_OPENAI = os.getenv("USE_OPENAI_EMBEDDING", "false").lower() == "true"
 
 if USE_OPENAI:
     import openai
-    openai.api_key = os.getenv("OPENAI_API_KEY")
+    client = OpenAI(api_key = os.getenv("OPENAI_API_KEY"))
 
     def get_embedding(text: str) -> list[float]:
         """
         Get embedding from OpenAI API.
         """
-        response = openai.embeddings.create(
+        response = client.embeddings.create(
             model="text-embedding-3-small",
             input=text
         )

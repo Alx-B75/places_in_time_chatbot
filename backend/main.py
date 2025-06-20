@@ -6,7 +6,7 @@ from fastapi.requests import Request
 from pydantic import BaseModel
 from dotenv import load_dotenv
 import os
-import openai
+from openai import OpenAI
 from sqlalchemy.orm import Session
 from backend.database import get_db_chat, SessionLocal
 from backend import crud, schemas, models
@@ -35,7 +35,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key = os.getenv("OPENAI_API_KEY"))
 
 class Query(BaseModel):
     """
@@ -111,43 +111,82 @@ def user_threads(request: Request, user_id: int, db: Session = Depends(get_db_ch
     })
 
 
-@app.post("/ask", response_model=schemas.ChatRead)
-def ask_question(query: schemas.ChatCreateRequest, db: Session = Depends(get_db_chat)):
+@app.post("/ask", response_model=schemas.ChatMessageRead)
+def ask_question(query: schemas.AskRequest, db: Session = Depends(get_db_chat)):
     """
-    Receive a user question, generate an answer using GPT, save the chat linked to the user,
-    and return the saved chat entry.
-    """
+        Handle a user question by generating an AI response, storing both the question
+        and answer as separate chat messages in the database, and returning the assistant's reply.
+
+        Steps:
+        - Validate that the user exists.
+        - Optionally fetch a historical figure's persona prompt for impersonation.
+        - Use OpenAI to generate a response based on the system prompt and user message.
+        - Store two messages in the chat history: one for the user, one for the assistant.
+        - Return the assistant's message as confirmation.
+
+        Args:
+            query (AskRequest): Incoming user message and metadata.
+            db (Session): SQLAlchemy database session.
+
+        Returns:
+            ChatRead: The assistant's stored message.
+        """
     user = crud.get_user_by_id(db, query.user_id)
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
 
+    system_prompt = "You are a helpful and accurate historical guide."
+
+    if query.figure_slug:
+        from backend.figures_database import FigureSessionLocal
+        from backend.models import HistoricalFigure
+
+        fig_db = FigureSessionLocal()
+        figure = fig_db.query(HistoricalFigure).filter(HistoricalFigure.slug == query.figure_slug).first()
+        if figure and figure.persona_prompt:
+            system_prompt = figure.persona_prompt
+        fig_db.close()
+
     try:
-        response = openai.chat.completions.create(
-            model="gpt-4o-mini",
+        client = OpenAI()
+
+        response = client.chat.completions.create(
+            model="gpt-4o",
             messages=[
-                {"role": "system", "content": "You are a helpful and accurate historical guide."},
-                {"role": "user", "content": query.question}
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": query.message}
             ],
             temperature=0.7
         )
         answer = response.choices[0].message.content
 
-        chat = schemas.ChatCreate(
-            question=query.question,
-            answer=answer,
+        user_msg = schemas.ChatMessageCreate(
             user_id=query.user_id,
+            role="user",
+            message=query.message,
             model_used=query.model_used,
             source_page=query.source_page,
+            thread_id=query.thread_id
         )
-        db_chat = crud.create_chat(db, chat)
+        crud.create_chat_message(db, user_msg)
+
+        assistant_msg = schemas.ChatMessageCreate(
+            user_id=query.user_id,
+            role="assistant",
+            message=answer,
+            model_used=query.model_used,
+            source_page=query.source_page,
+            thread_id=query.thread_id
+        )
+        db_chat = crud.create_chat_message(db, assistant_msg)
         return db_chat
 
+
     except Exception as e:
-        return {"error": str(e)}
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-
-@app.get("/chats", response_model=list[schemas.ChatRead])
+@app.get("/chats", response_model=list[schemas.ChatMessageRead])
 def get_chats(limit: int = 100, db: Session = Depends(get_db_chat)):
     """
     Get the most recent chat entries from the database.
@@ -202,7 +241,9 @@ def chat_complete(
     formatted = [{"role": m.role, "content": m.message} for m in messages]
     formatted.insert(0, {"role": "system", "content": "You are a helpful and accurate historical guide."})
 
-    response = openai.chat.completions.create(
+    client = OpenAI()
+
+    response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=formatted,
         temperature=0.7
@@ -288,6 +329,14 @@ def select_user(user_id: int = Form(...)):
     Redirect to a user's thread list.
     """
     return RedirectResponse(url=f"/user/{user_id}/threads", status_code=303)
+
+
+@app.get("/figures/chat", response_class=HTMLResponse)
+def show_figure_chat(request: Request):
+    """
+    Show form to chat with a historical figure.
+    """
+    return templates.TemplateResponse("figure_chat.html", {"request": request})
 
 
 @app.post("/register")

@@ -2,11 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from backend.database import get_db_chat, get_chroma_retriever
 from backend.models import Chat
-from backend.schemas import AskRequest, AskResponse
+from ..schemas import AskRequest, AskResponse
 from openai import OpenAI
 import os
 from datetime import datetime
-from backend.models_figure import HistoricalFigure
+from backend.models import HistoricalFigure
 from backend.database import get_db_figure
 
 router = APIRouter()
@@ -35,7 +35,7 @@ def ask_question(
 
     # Search relevant figure context
     results = retriever.get_relevant_documents(
-        request.question,
+        request.message,
         filter={"figure_slug": request.figure_slug}
     )
     sources_used = []
@@ -51,7 +51,7 @@ def ask_question(
     ]
     for chunk in context_chunks:
         messages.append({"role": "system", "content": chunk})
-    messages.append({"role": "user", "content": request.question})
+    messages.append({"role": "user", "content": request.message})
 
     # Ask GPT
     completion = client.chat.completions.create(
@@ -66,7 +66,7 @@ def ask_question(
         thread_id=request.thread_id,
         figure_slug=request.figure_slug,
         role="user",
-        message=request.question,
+        message=request.message,
         timestamp=datetime.utcnow()
     )
     db_chat.add(chat_entry)

@@ -25,38 +25,48 @@ class ChatCreateRequest(BaseModel):
     """
     Input schema for /ask endpoint - client sends only these fields.
     """
-    question: str
+    message: str
     user_id: int
     model_used: Optional[str] = None
     source_page: Optional[str] = None
+    figure_slug:Optional[str] = None
 
 
-class ChatCreate(BaseModel):
+class ChatBase(BaseModel):
     """
-    Internal schema used for DB creation.
+    Shared base class for chat messages.
     """
-    question: str
-    answer: str
-    user_id: int
+    role: str
+    message: str
     model_used: Optional[str] = None
     source_page: Optional[str] = None
+    thread_id: Optional[int] = None
+    summary_of: Optional[int] = None
 
 
-class ChatRead(BaseModel):
+class ChatMessageCreate(BaseModel):
     """
-    Output schema - data returned after creation or reading.
+    Schema for creating a single chat message.
+    """
+    user_id: Optional[int]
+    role: str  # 'user', 'assistant', 'system', or 'summary'
+    message: str
+    model_used: Optional[str] = None
+    source_page: Optional[str] = None
+    thread_id: Optional[int] = None
+    summary_of: Optional[str] = None
+
+class ChatMessageRead(ChatMessageCreate):
+    """
+    Schema for reading a stored chat message with timestamp and ID.
     """
     id: int
-    question: str
-    answer: str
-    user_id: int
-    model_used: Optional[str] = None
-    source_page: Optional[str] = None
     timestamp: datetime
 
     model_config = {
         "from_attributes": True
     }
+
 
 
 
@@ -163,3 +173,34 @@ class HistoricalFigureDetail(HistoricalFigureRead):
     wiki_links: Optional[str]
     verified: Optional[int]
     contexts: List[FigureContextRead] = []
+
+class AskRequest(BaseModel):
+    """
+    Schema for incoming questions to the chatbot.
+    Used by the /ask endpoint to structure the user's prompt.
+    """
+    user_id: int
+    message: str
+    figure_slug: Optional[str] = None
+    source_page: Optional[str] = None
+    model_used: Optional[str] = "gpt-4o-mini"
+    thread_id: Optional[int] = None
+
+
+class AskResponse(BaseModel):
+    """
+    Schema for chatbot responses returned by the /ask endpoint.
+    Includes metadata and the assistant's message.
+    """
+    id: int
+    user_id: int
+    role: str
+    message: str
+    model_used: Optional[str] = None
+    source_page: Optional[str] = None
+    thread_id: Optional[int] = None
+    timestamp: datetime
+
+    model_config = {
+        "from_attributes": True
+    }
