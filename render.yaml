@@ -4,17 +4,18 @@ services:
     env: python
     plan: free
 
-    # ensure this runs at your repo root (where `backend/` lives)
+    # ← correct key! ensure CWD is your repo root (where backend/ is)
     workingDirectory: .
 
-    # install the deps from your backend folder
+    # install your deps
     buildCommand: pip install -r backend/requirements.txt
 
-    # tell uvicorn to import the app from the root-level `backend` package
+    # import the FastAPI app from the top-level backend package
     startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
 
     envVars:
       - key: PORT
-        value: 10000
+        value: "10000"
 
     autoDeploy: true
+
