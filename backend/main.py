@@ -14,13 +14,13 @@ from dotenv import load_dotenv
 import os
 from openai import OpenAI
 from sqlalchemy.orm import Session
-from backend.database import get_db_chat, SessionLocalFigure
-from backend import crud, schemas, models
-from backend.routers import figures
+from .database import get_db_chat, SessionLocalFigure
+from . import crud, schemas, models
+from .routers import figures
 from typing import Optional
-from backend.figures_database import FigureSessionLocal
-from backend.models import HistoricalFigure
-from backend.vector.context_retriever import search_figure_context
+from .figures_database import FigureSessionLocal
+from .models import HistoricalFigure
+from .vector.context_retriever import search_figure_context
 import uvicorn
 
 load_dotenv()
