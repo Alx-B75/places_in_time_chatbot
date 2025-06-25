@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 import os
 from openai import OpenAI
 from sqlalchemy.orm import Session
-from backend.database import get_db_chat, SessionLocal
+from backend.database import get_db_chat, SessionLocalFigure
 from backend import crud, schemas, models
 from backend.routers import figures
 from typing import Optional
