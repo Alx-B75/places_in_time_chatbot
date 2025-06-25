@@ -3,9 +3,18 @@ services:
     name: places-in-time-backend
     env: python
     plan: free
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn entrypoint:app --host 0.0.0.0 --port $PORT
+
+    # ensure this runs at your repo root (where `backend/` lives)
+    workingDirectory: .
+
+    # install the deps from your backend folder
+    buildCommand: pip install -r backend/requirements.txt
+
+    # tell uvicorn to import the app from the root-level `backend` package
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+
     envVars:
       - key: PORT
         value: 10000
+
     autoDeploy: true
