@@ -3,19 +3,11 @@ services:
     name: places-in-time-backend
     env: python
     plan: free
-
-    # ← correct key! ensure CWD is your repo root (where backend/ is)
-    workingDirectory: .
-
-    # install your deps
+    workingDirectory: . # Keep this at the root
     buildCommand: pip install -r backend/requirements.txt
-
-    # import the FastAPI app from the top-level backend package
-    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
-
+    # CHANGE START COMMAND to run your entrypoint.py
+    startCommand: python entrypoint.py
     envVars:
       - key: PORT
         value: "10000"
-
     autoDeploy: true
-
