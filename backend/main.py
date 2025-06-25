@@ -15,6 +15,7 @@ from typing import Optional
 from backend.figures_database import FigureSessionLocal
 from backend.models import HistoricalFigure
 from backend.vector.context_retriever import search_figure_context
+import uvicorn
 
 load_dotenv()
 
@@ -519,4 +520,8 @@ async def create_new_thread(user_id: int, request: Request, db: Session = Depend
 
 
 app.include_router(figures.router)
+
+if __name__ == "__main__":
+    uvicorn.run("backend.main:app", host="0.0.0.0", port=10000)
+
 
