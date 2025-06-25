@@ -4,8 +4,7 @@ services:
     env: python
     plan: free
     buildCommand: pip install -r backend/requirements.txt
-    startCommand: python -m backend.main
-    workingDir: .
+    startCommand: PYTHONPATH=. python -m backend.main
     envVars:
       - key: PORT
         value: 10000
