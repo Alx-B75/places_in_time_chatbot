@@ -1,9 +1,12 @@
 services:
   - type: web
-    name: places-in-time-chatbot
-    runtime: python
-    buildCommand: ""
+    name: places-in-time-backend
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
     startCommand: uvicorn backend.main:app --host 0.0.0.0 --port 10000
     envVars:
-      - key: PYTHONPATH
-        value: .
+      - key: PORT
+        value: 10000
+    autoDeploy: true
+
