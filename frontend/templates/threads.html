@@ -76,6 +76,28 @@
             margin-top: 0.3rem;
         }
 
+        .thread-actions {
+            margin-top: 0.5rem;
+        }
+
+        .thread-actions form {
+            display: inline;
+        }
+
+        .thread-actions button {
+            font-size: 0.8rem;
+            background-color: #d9534f;
+            color: white;
+            border: none;
+            padding: 0.4rem 0.8rem;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .thread-actions button:hover {
+            background-color: #c9302c;
+        }
+
         form {
             margin-top: 2rem;
             display: flex;
@@ -128,41 +150,46 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Your Chat Threads</h1>
-            <p class="description">
-                Threads are ongoing conversations with our historical guide. You can view past threads or start a new one.
-                Each thread keeps its own context so you can return to it any time.
-            </p>
-        </header>
+<div class="container">
+    <header>
+        <h1>Your Chat Threads</h1>
+        <p class="description">
+            Threads are ongoing conversations with our historical guide. You can view past threads or start a new one.
+            Each thread keeps its own context so you can return to it any time.
+        </p>
+    </header>
 
-        <section class="thread-section">
-            {% if threads %}
-                <ul class="thread-list">
-                    {% for thread in threads %}
-                        <li class="thread-item">
-                            <a href="/thread/{{ thread.id }}">{{ thread.title or "Untitled Thread" }}</a>
-                            <div class="thread-date">Created: {{ thread.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
-                        </li>
-                    {% endfor %}
-                </ul>
-            {% else %}
-                <p>You haven’t started any threads yet. Create one below to begin exploring history!</p>
-            {% endif %}
+    <section class="thread-section">
+        {% if threads %}
+            <ul class="thread-list">
+                {% for thread in threads %}
+                    <li class="thread-item">
+                        <a href="/thread/{{ thread.id }}">{{ thread.title or "Untitled Thread" }}</a>
+                        <div class="thread-date">Created: {{ thread.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                        <div class="thread-actions">
+                            <form method="post" action="/thread/{{ thread.id }}/delete" onsubmit="return confirm('Delete this thread?');">
+                                <button type="submit">Delete</button>
+                            </form>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>You haven’t started any threads yet. Create one below to begin exploring history!</p>
+        {% endif %}
 
-            <a href="/static/ask_figure.html">
-    <button>Ask a Historical Figure</button>
-</a>
-        </section>
-
-
-        <form action="/user/{{ user.id }}/create_thread" method="post">
-            <input type="text" name="title" placeholder="Enter a title for your new thread" required>
-            <button type="submit">Start New Thread</button>
+        <form method="get" action="/figures/ask">
+            <input type="hidden" name="user_id" value="{{ user.id }}">
+            <button type="submit">Ask a Historical Figure</button>
         </form>
+    </section>
 
-        <a href="/" class="back-link">← Return to Homepage</a>
-    </div>
+    <form action="/user/{{ user.id }}/create_thread" method="post">
+        <input type="text" name="title" placeholder="Enter a title for your new thread" required>
+        <button type="submit">Start New Thread</button>
+    </form>
+
+    <a href="/" class="back-link">← Return to Homepage</a>
+</div>
 </body>
 </html>

@@ -100,8 +100,20 @@
                 <span class="content">{{ msg.message }}</span>
             </div>
         {% endfor %}
+        {% if context_text %}
+        <div class="context-debug" style="margin-top:2rem; background:#fffbe6; padding:1rem;">
+            <h3>Chroma Context Used:</h3>
+            <pre>{{ context_text }}</pre>
+        </div>
+{% endif %}
+
     </div>
     {% endif %}
+    {% if user_id_value %}
+    <a href="/user/{{ user_id_value }}/threads" style="display: inline-block; margin-top: 2rem; text-decoration: none; color: #444;">
+        ← Back to Threads
+    </a>
+{% endif %}
 </div>
 </body>
 </html>

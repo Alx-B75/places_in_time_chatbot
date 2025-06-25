@@ -14,6 +14,7 @@ from backend.routers import figures
 from typing import Optional
 from backend.figures_database import FigureSessionLocal
 from backend.models import HistoricalFigure
+from backend.vector.context_retriever import search_figure_context
 
 load_dotenv()
 
@@ -82,6 +83,16 @@ async def create_thread_for_user(user_id: int, request: Request, db: Session = D
 
     return RedirectResponse(url=f"/thread/{thread.id}", status_code=303)
 
+
+@app.post("/thread/{thread_id}/delete", response_class=HTMLResponse)
+def delete_thread(thread_id: int, db: Session = Depends(get_db_chat)):
+    thread = crud.get_thread_by_id(db, thread_id)
+    if not thread:
+        raise HTTPException(status_code=404, detail="Thread not found")
+
+    db.delete(thread)
+    db.commit()
+    return RedirectResponse(url=f"/user/{thread.user_id}/threads", status_code=303)
 
 
 
@@ -331,9 +342,20 @@ async def ask_figure_submit(
 
     system_prompt = figure.persona_prompt or "You are a helpful historical guide."
 
+    context_chunks = search_figure_context(query=message, figure_slug=figure_slug)
+    context_text = "\n\n".join([chunk["content"] for chunk in context_chunks]) if context_chunks else ""
+
     all_messages = crud.get_messages_by_thread(db, thread_id)
     formatted = [{"role": m.role, "content": m.message} for m in all_messages]
-    formatted.insert(0, {"role": "system", "content": system_prompt})
+    formatted = [{"role": "system", "content": system_prompt}]
+
+    if context_text:
+        formatted.append({
+            "role": "system",
+            "content": f"Relevant historical context:\n{context_text}"
+        })
+
+    formatted.extend([{"role": m.role, "content": m.message} for m in all_messages])
 
     response = client.chat.completions.create(
         model="gpt-4o",
@@ -360,7 +382,8 @@ async def ask_figure_submit(
         "figure": figure,
         "thread": thread,
         "messages": updated_messages,
-        "user_id_value": user_id_value
+        "user_id_value": user_id_value,
+        "context_text": context_text
     })
 
 
@@ -400,6 +423,7 @@ from fastapi import Query
 def get_ask_figure_page(
     request: Request,
     figure_slug: Optional[str] = Query(None),
+    user_id: Optional[str] = Query(None),
     thread_id: Optional[int] = None,
     db: Session = Depends(get_db_chat)
 ):
@@ -424,7 +448,7 @@ def get_ask_figure_page(
     thread = crud.get_thread_by_id(db, thread_id) if thread_id else None
     messages = crud.get_messages_by_thread(db, thread_id) if thread else []
 
-    user_id_value = None
+    user_id_value = user_id
     if messages and len(messages) > 0:
         user_id_value = messages[0].user_id
 

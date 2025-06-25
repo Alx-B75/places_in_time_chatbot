@@ -50,11 +50,15 @@
 </div>
 
 <script>
+    const params = new URLSearchParams(window.location.search);
+    const userId = params.get("user_id");
+
     document.getElementById('figureForm').addEventListener('submit', function(e) {
         e.preventDefault();
         const slug = document.getElementById('figureSlug').value;
-        window.location.href = `/figures/ask?figure_slug=${encodeURIComponent(slug)}`;
+        window.location.href = `/figures/ask?figure_slug=${encodeURIComponent(slug)}&user_id=${encodeURIComponent(userId)}`;
     });
 </script>
+
 </body>
 </html>

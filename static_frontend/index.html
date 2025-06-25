@@ -1,0 +1,44 @@
+<!-- static_frontend/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Places In Time Chat</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h1>Ask a Historical Figure</h1>
+  <div id="messages"></div>
+  <form id="chat-form">
+    <input id="user-input" placeholder="Ask something..." />
+    <button type="submit">Send</button>
+  </form>
+
+  <script>
+    const form = document.getElementById('chat-form');
+    const input = document.getElementById('user-input');
+    const messages = document.getElementById('messages');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const userMsg = input.value;
+      messages.innerHTML += `<p><strong>You:</strong> ${userMsg}</p>`;
+      input.value = '';
+
+      const res = await fetch('https://your-fastapi-url.onrender.com/ask', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          user_id: 1,
+          thread_id: "default",
+          figure_slug: "alexander-the-great",
+          message: userMsg
+        })
+      });
+
+      const data = await res.json();
+      messages.innerHTML += `<p><strong>AI:</strong> ${data.answer}</p>`;
+    });
+  </script>
+</body>
+</html>

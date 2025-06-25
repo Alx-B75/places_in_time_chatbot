@@ -15,6 +15,7 @@ def search_figure_context(query: str, figure_slug: str, top_k: int = 5) -> list[
     Returns:
         List[dict]: A list of matching documents with their metadata.
     """
+    print(f"[CHROMA] Queried for: '{query}' | figure_slug: '{figure_slug}'")
     collection = get_figure_context_collection()
     query_embedding = get_embedding(query)
 
@@ -23,6 +24,9 @@ def search_figure_context(query: str, figure_slug: str, top_k: int = 5) -> list[
         where={"figure_slug": figure_slug},
         n_results=top_k
     )
+
+
+    print(f"[CHROMA] Retrieved {len(results['documents'][0])} documents")
 
     return [
         {
