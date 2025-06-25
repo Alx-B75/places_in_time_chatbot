@@ -1,3 +1,9 @@
+import os, sys
+print("===== DEBUG: CWD =", os.getcwd())
+print("===== DEBUG: DIR  =", os.listdir())
+print("===== DEBUG: SYSP =", sys.path)
+
+
 from fastapi import Depends, FastAPI, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.templating import Jinja2Templates
