@@ -9,26 +9,10 @@ if project_root_dir not in sys.path:
     sys.path.insert(0, project_root_dir)
 
 from backend.database import engine, engine_figure, SessionLocalFigure
-from backend.models import Base, HistoricalFigure
+from backend.models import Base, HistoricalFigure, User, Thread, FigureContext
 
 DATA_FILE = os.path.join(project_root_dir, "data", "figures_cleaned.csv")
 
-def init_db():
-    """
-    Creates all tables defined in the SQLAlchemy models for both databases,
-    and seeds the figures.db with data from figures_cleaned.csv.
-    """
-    print("📂 Current working directory:", os.getcwd())
-    print("📄 Target CHAT DB path:", os.path.abspath("./data/chat_history.db"))
-    print("📄 Target FIGURE DB path:", os.path.abspath("./data/figures.db"))
-
-    Base.metadata.create_all(bind=engine)
-    print("✅ Initial chat history database tables created.")
-
-    Base.metadata.create_all(bind=engine_figure)
-    print("✅ Initial historical figures database tables created.")
-
-    seed_figures()
 
 def seed_figures():
     """
@@ -74,6 +58,23 @@ def seed_figures():
             print(f"✅ Seeded {count} historical figures.")
     finally:
         session.close()
+
+def init_db():
+    """
+    Creates all tables defined in the SQLAlchemy models for both databases,
+    and seeds the figures.db with data from figures_cleaned.csv.
+    """
+    print("📂 Current working directory:", os.getcwd())
+    print("📄 Target CHAT DB path:", os.path.abspath("./data/chat_history.db"))
+    print("📄 Target FIGURE DB path:", os.path.abspath("./data/figures.db"))
+
+    Base.metadata.create_all(bind=engine)
+    print("✅ Initial chat history database tables created.")
+
+    Base.metadata.create_all(bind=engine_figure)
+    print("✅ Initial historical figures database tables created.")
+
+    seed_figures()
 
 if __name__ == "__main__":
     init_db()
