@@ -9,7 +9,7 @@ if project_root_dir not in sys.path:
     sys.path.insert(0, project_root_dir)
 
 from backend.database import engine, engine_figure, SessionLocalFigure
-from backend.models import Base, HistoricalFigure, User, Thread, FigureContext
+from backend.models import Base, FigureBase, HistoricalFigure, User, Thread, FigureContext
 
 DATA_FILE = os.path.join(project_root_dir, "data", "figures_cleaned.csv")
 
@@ -71,7 +71,7 @@ def init_db():
     Base.metadata.create_all(bind=engine)
     print("✅ Initial chat history database tables created.")
 
-    Base.metadata.create_all(bind=engine_figure)
+    FigureBase.metadata.create_all(bind=engine_figure)
     print("✅ Initial historical figures database tables created.")
 
     seed_figures()
