@@ -24,9 +24,9 @@ def seed_figures():
 
     session = SessionLocalFigure()
     try:
-        if session.query(HistoricalFigure).first():
-            print("ℹ️ historical_figures table already populated. Skipping seeding.")
-            return
+        # removed for render deployment - if session.query(HistoricalFigure).first():
+        #   print("ℹ️ historical_figures table already populated. Skipping seeding.")
+        #  return
 
         with open(DATA_FILE, newline='', encoding='utf-8') as csvfile:
             reader = csv.DictReader(csvfile)
