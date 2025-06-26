@@ -2,19 +2,20 @@ import os
 import sys
 import csv
 
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root_dir = os.path.dirname(current_dir)
+
+if project_root_dir not in sys.path:
+    sys.path.insert(0, project_root_dir)
+
 from backend.database import (
     engine,
     engine_figure,
-    SessionLocalFigure
+    SessionLocalFigure,
 )
-from backend.models import (
-    BaseChat,
-    BaseFigure,
-    HistoricalFigure
-)
+from backend.models import Base, FigureBase, HistoricalFigure, FigureContext
+from tools.load_context_to_chroma import load_context_to_chroma
 
-current_dir = os.path.dirname(os.path.abspath(__file__))
-project_root_dir = os.path.dirname(current_dir)
 DATA_FILE = os.path.join(project_root_dir, "data", "figures_cleaned.csv")
 
 
@@ -64,22 +65,52 @@ def seed_figures():
         session.close()
 
 
+def populate_figure_context_from_bio():
+    """
+    Create a default FigureContext entry for each HistoricalFigure
+    using the long_bio as context.
+    """
+    session = SessionLocalFigure()
+    try:
+        figures = session.query(HistoricalFigure).all()
+        count = 0
+        for figure in figures:
+            if not figure.long_bio:
+                continue
+            context = FigureContext(
+                figure_slug=figure.slug,
+                source_name="bio_csv",
+                source_url="",
+                content_type="bio",
+                content=figure.long_bio,
+                is_manual=0
+            )
+            session.add(context)
+            count += 1
+        session.commit()
+        print(f"✅ Populated {count} figure contexts from long_bio.")
+    finally:
+        session.close()
+
+
 def init_db():
     """
-    Creates all tables in chat_history.db and figures.db,
-    and seeds figures.db with historical figures.
+    Creates all tables defined in the SQLAlchemy models for both databases,
+    seeds figures from CSV, populates figure context, and loads vectors into Chroma.
     """
     print("📂 Current working directory:", os.getcwd())
     print("📄 Target CHAT DB path:", os.path.abspath("./data/chat_history.db"))
     print("📄 Target FIGURE DB path:", os.path.abspath("./data/figures.db"))
 
-    BaseChat.metadata.create_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
     print("✅ Initial chat history database tables created.")
 
-    BaseFigure.metadata.create_all(bind=engine_figure)
+    FigureBase.metadata.create_all(bind=engine_figure)
     print("✅ Initial historical figures database tables created.")
 
     seed_figures()
+    populate_figure_context_from_bio()
+    load_context_to_chroma()
 
 
 if __name__ == "__main__":
