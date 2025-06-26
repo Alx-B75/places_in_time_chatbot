@@ -11,6 +11,7 @@ if project_root_dir not in sys.path:
 from backend.database import engine, engine_figure, SessionLocalFigure
 from backend.models import Base, FigureBase, HistoricalFigure, User, Thread, FigureContext
 from backend.vector.vector_ingest import ingest_all_context_chunks
+from backend.tools.load_context_to_chroma import load_context_to_chroma
 
 
 
@@ -78,7 +79,7 @@ def init_db():
     print("✅ Initial historical figures database tables created.")
 
     seed_figures()
-    ingest_all_context_chunks()
+    load_context_to_chroma()
 
 if __name__ == "__main__":
     init_db()
