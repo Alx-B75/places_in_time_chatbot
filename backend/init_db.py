@@ -9,11 +9,8 @@ if project_root_dir not in sys.path:
     sys.path.insert(0, project_root_dir)
 
 from backend.database import engine, engine_figure, SessionLocalFigure
-from backend.models import Base, FigureBase, HistoricalFigure, User, Thread, FigureContext
-from backend.vector.vector_ingest import ingest_all_context_chunks
-from backend.tools.load_context_to_chroma import load_context_to_chroma
-
-
+from backend.models import Base, HistoricalFigure, User, Thread, FigureContext
+from tools.load_context_to_chroma import load_context_to_chroma
 
 DATA_FILE = os.path.join(project_root_dir, "data", "figures_cleaned.csv")
 
@@ -28,9 +25,9 @@ def seed_figures():
 
     session = SessionLocalFigure()
     try:
-        # removed for render deployment - if session.query(HistoricalFigure).first():
-        #   print("ℹ️ historical_figures table already populated. Skipping seeding.")
-        #  return
+        if session.query(HistoricalFigure).first():
+            print("ℹ️ historical_figures table already populated. Skipping seeding.")
+            return
 
         with open(DATA_FILE, newline='', encoding='utf-8') as csvfile:
             reader = csv.DictReader(csvfile)
@@ -63,10 +60,42 @@ def seed_figures():
     finally:
         session.close()
 
+
+def seed_context_from_long_bios():
+    """
+    Creates one FigureContext per figure using their long_bio field.
+    Only runs if the FigureContext table is empty.
+    """
+    session = SessionLocalFigure()
+    if session.query(FigureContext).first():
+        print("ℹ️ FigureContext already seeded. Skipping.")
+        session.close()
+        return
+
+    figures = session.query(HistoricalFigure).all()
+    count = 0
+
+    for fig in figures:
+        if fig.long_bio:
+            ctx = FigureContext(
+                figure_slug=fig.slug,
+                chunk_text=fig.long_bio,
+                source_name="figures_cleaned.csv",
+                content_type="long_bio"
+            )
+            session.add(ctx)
+            count += 1
+
+    session.commit()
+    session.close()
+    print(f"✅ Seeded {count} context chunks from long_bio.")
+
+
 def init_db():
     """
     Creates all tables defined in the SQLAlchemy models for both databases,
-    and seeds the figures.db with data from figures_cleaned.csv.
+    seeds the figures.db with data from figures_cleaned.csv,
+    populates FigureContext, and loads it into Chroma.
     """
     print("📂 Current working directory:", os.getcwd())
     print("📄 Target CHAT DB path:", os.path.abspath("./data/chat_history.db"))
@@ -75,11 +104,13 @@ def init_db():
     Base.metadata.create_all(bind=engine)
     print("✅ Initial chat history database tables created.")
 
-    FigureBase.metadata.create_all(bind=engine_figure)
+    Base.metadata.create_all(bind=engine_figure)
     print("✅ Initial historical figures database tables created.")
 
     seed_figures()
+    seed_context_from_long_bios()
     load_context_to_chroma()
+
 
 if __name__ == "__main__":
     init_db()
