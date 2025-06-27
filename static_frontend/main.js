@@ -1,44 +1,56 @@
-document.addEventListener("DOMContentLoaded", () => {
-    const authForm = document.getElementById("auth-form");
-    const toggleLink = document.getElementById("toggle-auth");
-    const formTitle = document.getElementById("form-title");
-    let isLogin = true;
+document.addEventListener("DOMContentLoaded", function () {
+  const form = document.getElementById("auth-form");
+  const toggleLink = document.getElementById("toggle-auth");
+  const title = document.getElementById("form-title");
+  const message = document.getElementById("message");
 
-    authForm.addEventListener("submit", async (event) => {
-        event.preventDefault();
-        const username = document.getElementById("username").value;
-        const password = document.getElementById("password").value;
+  let isLogin = true;
 
-        try {
-            const url = isLogin ? "/login" : "/register_user";
-            const response = await fetch(url, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ username, password }),
-            });
+  toggleLink.addEventListener("click", function (event) {
+    event.preventDefault();
+    isLogin = !isLogin;
+    title.textContent = isLogin ? "Login" : "Register";
+    toggleLink.textContent = isLogin
+      ? "Don't have an account? Register"
+      : "Already have an account? Login";
+  });
 
-            const contentType = response.headers.get("content-type") || "";
-            const data = contentType.includes("application/json")
-                ? await response.json()
-                : { message: await response.text() };
+  form.addEventListener("submit", async function (event) {
+    event.preventDefault();
 
-            if (!response.ok) {
-                throw new Error(data.message || "Something went wrong.");
-            }
+    const username = document.getElementById("username").value.trim();
+    const password = document.getElementById("password").value;
 
-            localStorage.setItem("user_id", data.user_id);
-            window.location.href = "dashboard.html";
-        } catch (error) {
-            document.getElementById("message").textContent = error.message;
-        }
-    });
+    if (!username || !password) {
+      message.textContent = "Username and password are required.";
+      return;
+    }
 
-    toggleLink.addEventListener("click", (e) => {
-        e.preventDefault();
-        isLogin = !isLogin;
-        formTitle.textContent = isLogin ? "Login" : "Register";
-        toggleLink.textContent = isLogin
-            ? "Don't have an account? Register"
-            : "Already have an account? Login";
-    });
+    const endpoint = isLogin ? "/login_user" : "/register_user";
+
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      if (response.redirected) {
+        window.location.href = response.url;
+        return;
+      }
+
+      const data = await response.json();
+      if (response.ok) {
+        message.textContent = "Success!";
+      } else {
+        message.textContent = data.detail || "Something went wrong.";
+      }
+    } catch (err) {
+      console.error("Error:", err);
+      message.textContent = "Network error or server unavailable.";
+    }
+  });
 });

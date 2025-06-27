@@ -1,29 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Places in Time – Login</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Places in Time – Login</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-    <div class="auth-container">
-        <h1 id="form-title">Login</h1>
-        <form id="auth-form">
-            <label for="username">Username</label>
-            <input type="text" id="username" name="username" required>
+  <main class="centered-form">
+    <h1 id="form-title">Login</h1>
+    <form id="auth-form">
+      <label for="username">Username:</label>
+      <input type="text" id="username" name="username" required />
 
-            <label for="password">Password</label>
-            <input type="password" id="password" name="password" required>
+      <label for="password">Password:</label>
+      <input type="password" id="password" name="password" required />
 
-            <button type="submit">Submit</button>
-        </form>
-
-        <p id="message" class="message"></p>
-        <p>
-            <a href="#" id="toggle-auth">Don't have an account? Register</a>
-        </p>
-    </div>
-
-    <script src="main.js"></script>
+      <button type="submit">Submit</button>
+    </form>
+    <p>
+      <a href="#" id="toggle-auth">Don't have an account? Register</a>
+    </p>
+    <div id="message" class="error-message"></div>
+  </main>
+  <script src="main.js"></script>
 </body>
 </html>
