@@ -1,58 +1,54 @@
-document.addEventListener("DOMContentLoaded", function () {
-  const loginForm = document.getElementById("form-login");
-  const registerForm = document.getElementById("form-register");
-  const toggleLogin = document.getElementById("btn-toggle-login");
-  const toggleRegister = document.getElementById("btn-toggle-register");
+document.addEventListener("DOMContentLoaded", () => {
+  let mode = "login"; // Can be 'login' or 'register'
 
-  toggleLogin.addEventListener("click", () => {
-    loginForm.style.display = "block";
-    registerForm.style.display = "none";
-  });
+  const formTitle = document.getElementById("form-title");
+  const authForm = document.getElementById("auth-form");
+  const submitButton = document.getElementById("submit-button");
+  const toggleLink = document.getElementById("toggle-link");
+  const messageArea = document.getElementById("message-area");
 
-  toggleRegister.addEventListener("click", () => {
-    loginForm.style.display = "none";
-    registerForm.style.display = "block";
-  });
-
-  loginForm.addEventListener("submit", async (e) => {
+  toggleLink.addEventListener("click", (e) => {
     e.preventDefault();
-
-    const username = document.getElementById("login-username").value;
-    const password = document.getElementById("login-password").value;
-
-    const response = await fetch("/login_user", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
-    });
-
-    if (response.ok) {
-      const result = await response.json();
-      localStorage.setItem("user_id", result.user_id);
-      window.location.href = "dashboard.html";
+    if (mode === "login") {
+      mode = "register";
+      formTitle.textContent = "Register";
+      submitButton.textContent = "Register";
+      toggleLink.textContent = "Already have an account? Login here";
     } else {
-      alert("Login failed. Please try again.");
+      mode = "login";
+      formTitle.textContent = "Login";
+      submitButton.textContent = "Login";
+      toggleLink.textContent = "Don't have an account? Register here";
     }
+    messageArea.textContent = "";
   });
 
-  registerForm.addEventListener("submit", async (e) => {
+  authForm.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const username = document.getElementById("register-username").value;
-    const password = document.getElementById("register-password").value;
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
 
-    const response = await fetch("/register_user", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
-    });
+    const endpoint = mode === "login" ? "/login_user" : "/register_user";
 
-    if (response.ok) {
-      const result = await response.json();
-      localStorage.setItem("user_id", result.user_id);
-      window.location.href = "dashboard.html";
-    } else {
-      alert("Registration failed. Username may already exist.");
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        body: new URLSearchParams({ username, password }),
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      });
+
+      if (response.redirected) {
+        window.location.href = response.url;
+      } else {
+        const text = await response.text();
+        messageArea.textContent = text.includes("successfully")
+          ? "✅ Success"
+          : `⚠️ ${text}`;
+      }
+    } catch (err) {
+      messageArea.textContent = "❌ Network error. Try again.";
     }
   });
 });
+
