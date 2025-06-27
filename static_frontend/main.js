@@ -42,12 +42,20 @@ document.addEventListener("DOMContentLoaded", function () {
         return;
       }
 
-      const data = await response.json();
+      const responseText = await response.text();
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch {
+        data = {};
+      }
+
       if (response.ok) {
         message.textContent = "Success!";
       } else {
         message.textContent = data.detail || "Something went wrong.";
       }
+
     } catch (err) {
       console.error("Error:", err);
       message.textContent = "Network error or server unavailable.";
