@@ -1,54 +1,59 @@
 document.addEventListener("DOMContentLoaded", () => {
-  let mode = "login"; // Can be 'login' or 'register'
+    const form = document.getElementById("auth-form");
+    const message = document.getElementById("message");
+    const toggleBtn = document.getElementById("toggle-auth");
+    const formTitle = document.getElementById("form-title");
 
-  const formTitle = document.getElementById("form-title");
-  const authForm = document.getElementById("auth-form");
-  const submitButton = document.getElementById("submit-button");
-  const toggleLink = document.getElementById("toggle-link");
-  const messageArea = document.getElementById("message-area");
+    let mode = "login";
 
-  toggleLink.addEventListener("click", (e) => {
-    e.preventDefault();
-    if (mode === "login") {
-      mode = "register";
-      formTitle.textContent = "Register";
-      submitButton.textContent = "Register";
-      toggleLink.textContent = "Already have an account? Login here";
-    } else {
-      mode = "login";
-      formTitle.textContent = "Login";
-      submitButton.textContent = "Login";
-      toggleLink.textContent = "Don't have an account? Register here";
+    function toggleMode() {
+        mode = mode === "login" ? "register" : "login";
+        formTitle.textContent = mode === "login" ? "Login" : "Register";
+        toggleBtn.textContent = mode === "login"
+            ? "Don't have an account? Register"
+            : "Already have an account? Login";
+        message.textContent = "";
     }
-    messageArea.textContent = "";
-  });
 
-  authForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
+    toggleBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        toggleMode();
+    });
 
-    const username = document.getElementById("username").value;
-    const password = document.getElementById("password").value;
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
 
-    const endpoint = mode === "login" ? "/login_user" : "/register_user";
+        const username = document.getElementById("username").value;
+        const password = document.getElementById("password").value;
 
-    try {
-      const response = await fetch(endpoint, {
-        method: "POST",
-        body: new URLSearchParams({ username, password }),
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      });
+        if (!username || !password) {
+            message.textContent = "Please enter a username and password.";
+            return;
+        }
 
-      if (response.redirected) {
-        window.location.href = response.url;
-      } else {
-        const text = await response.text();
-        messageArea.textContent = text.includes("successfully")
-          ? "✅ Success"
-          : `⚠️ ${text}`;
-      }
-    } catch (err) {
-      messageArea.textContent = "❌ Network error. Try again.";
-    }
-  });
+        const endpoint = mode === "login" ? "/login" : "/register_user";
+        const payload = { username, password };
+
+        try {
+            const response = await fetch(endpoint, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.redirected) {
+                // Login success - assume redirect to threads
+                const userId = response.url.split("/").pop();
+                localStorage.setItem("user_id", userId);
+                window.location.href = "/static_frontend/dashboard.html";
+            } else {
+                const result = await response.json();
+                message.textContent = result.detail || "Unexpected error.";
+            }
+        } catch (error) {
+            message.textContent = "Error: " + error.message;
+        }
+    });
 });
-
