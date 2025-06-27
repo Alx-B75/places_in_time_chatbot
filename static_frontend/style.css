@@ -1,0 +1,39 @@
+body {
+  font-family: sans-serif;
+  padding: 2rem;
+  background: #f0f0f5;
+}
+
+.container {
+  max-width: 400px;
+  margin: auto;
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  margin-top: 1rem;
+}
+
+.auth-form input {
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+}
+
+.auth-form button {
+  padding: 0.5rem;
+}
+
+.form-toggle {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.hidden {
+  display: none;
+}

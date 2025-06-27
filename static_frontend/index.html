@@ -1,44 +1,43 @@
-<!-- static_frontend/index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Places In Time Chat</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <title>Places in Time – Login</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="style.css" rel="stylesheet">
 </head>
 <body>
-  <h1>Ask a Historical Figure</h1>
-  <div id="messages"></div>
-  <form id="chat-form">
-    <input id="user-input" placeholder="Ask something..." />
-    <button type="submit">Send</button>
-  </form>
+  <div class="container">
+    <h1>Welcome to Places in Time</h1>
 
-  <script>
-    const form = document.getElementById('chat-form');
-    const input = document.getElementById('user-input');
-    const messages = document.getElementById('messages');
+    <div class="form-toggle">
+      <button id="show-login">Login</button>
+      <button id="show-register">Register</button>
+    </div>
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const userMsg = input.value;
-      messages.innerHTML += `<p><strong>You:</strong> ${userMsg}</p>`;
-      input.value = '';
+    <form id="login-form" class="auth-form">
+      <h2>Login</h2>
+      <label for="login-username">Username</label>
+      <input type="text" id="login-username" required>
 
-      const res = await fetch('https://your-fastapi-url.onrender.com/ask', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-          user_id: 1,
-          thread_id: "default",
-          figure_slug: "alexander-the-great",
-          message: userMsg
-        })
-      });
+      <label for="login-password">Password</label>
+      <input type="password" id="login-password" required>
 
-      const data = await res.json();
-      messages.innerHTML += `<p><strong>AI:</strong> ${data.answer}</p>`;
-    });
-  </script>
+      <button type="submit">Login</button>
+    </form>
+
+    <form id="register-form" class="auth-form hidden">
+      <h2>Register</h2>
+      <label for="register-username">Username</label>
+      <input type="text" id="register-username" required>
+
+      <label for="register-password">Password</label>
+      <input type="password" id="register-password" required>
+
+      <button type="submit">Register</button>
+    </form>
+  </div>
+
+  <script src="main.js"></script>
 </body>
 </html>
