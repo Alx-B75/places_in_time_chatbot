@@ -1,3 +1,8 @@
+/**
+ * Handles user authentication (login and registration) logic.
+ * Sends requests to the backend using JSON and handles redirects.
+ */
+
 document.addEventListener("DOMContentLoaded", function () {
   const form = document.getElementById("auth-form");
   const toggleLink = document.getElementById("toggle-auth");
