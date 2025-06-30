@@ -1,59 +1,54 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const authForm = document.getElementById("auth-form");
-  const toggleLink = document.getElementById("toggle-auth");
-  const formTitle = document.getElementById("form-title");
-  const submitButton = document.getElementById("submit-button");
+  const form = document.getElementById("auth-form");
+  const toggle = document.getElementById("toggle-auth");
+  const title = document.getElementById("form-title");
+  const button = document.getElementById("submit-button");
   const message = document.getElementById("message");
 
   let isLogin = true;
 
-  toggleLink.addEventListener("click", (e) => {
+  toggle.addEventListener("click", (e) => {
     e.preventDefault();
     isLogin = !isLogin;
-
-    formTitle.textContent = isLogin ? "Login" : "Register";
-    submitButton.textContent = isLogin ? "Login" : "Register";
-    toggleLink.textContent = isLogin
+    title.textContent = isLogin ? "Login" : "Register";
+    button.textContent = isLogin ? "Login" : "Register";
+    toggle.textContent = isLogin
       ? "Don't have an account? Register"
       : "Already have an account? Login";
     message.textContent = "";
   });
 
-  authForm.addEventListener("submit", async (e) => {
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
+    message.textContent = "";
 
-    const username = authForm.username.value;
-    const password = authForm.password.value;
-    const url = isLogin
-      ? "https://places-backend-o8ym.onrender.com/login"
-      : "https://places-backend-o8ym.onrender.com/register";
+    const endpoint = isLogin ? "/login" : "/register";
+    const username = document.getElementById("username").value.trim();
+    const password = document.getElementById("password").value;
 
-    const formData = new FormData();
+    const formData = new URLSearchParams();
     formData.append("username", username);
     formData.append("password", password);
 
     try {
-      const response = await fetch(url, {
+      const response = await fetch("https://places-backend-o8ym.onrender.com" + endpoint, {
         method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
         body: formData,
-        redirect: "follow"
+        redirect: "manual"
       });
 
-      if (response.redirected) {
-        window.location.href = response.url;
-        return;
-      }
-
-      if (!response.ok) {
-        const data = await response.json();
-        message.textContent = data.detail || "Something went wrong.";
+      if (response.status === 302 || response.status === 303) {
+        window.location.href = "dashboard.html";
       } else {
-        message.textContent = isLogin
-          ? "Logged in successfully!"
-          : "Registration successful!";
+        const errorText = await response.text();
+        message.textContent = `Error (${response.status}): ${errorText}`;
       }
     } catch (error) {
       message.textContent = "Could not connect to the server. Please try again.";
+      console.error("Network error:", error);
     }
   });
 });
