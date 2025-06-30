@@ -24,27 +24,25 @@ from backend.vector.context_retriever import search_figure_context
 from utils.security import hash_password, verify_password
 import uvicorn
 
-load_dotenv()
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
-templates = Jinja2Templates(directory="frontend/templates")
-
-origins = [
-    "http://localhost:63342",
-    "http://localhost",
-    "http://localhost:8080",
-    "http://127.0.0.1",
-    "http://127.0.0.1:8080",
-    ]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,   # or ["*"] to allow all
+    allow_origins=["https://places-in-time-chatbot.onrender.com"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+load_dotenv()
+
+
+
+templates = Jinja2Templates(directory="frontend/templates")
+
 
 client = OpenAI(api_key = os.getenv("OPENAI_API_KEY"))
 
