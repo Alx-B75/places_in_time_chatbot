@@ -1,70 +1,67 @@
-document.addEventListener("DOMContentLoaded", () => {
-    const registerForm = document.getElementById("register-form");
-    const loginForm = document.getElementById("login-form");
+const backendUrl = 'https://places-backend-o8ym.onrender.com';
 
-    const apiBaseUrl = "https://places-backend-o8ym.onrender.com";
+document.addEventListener('DOMContentLoaded', () => {
+    const loginForm = document.getElementById('login-form');
+    const registerForm = document.getElementById('register-form');
+    const registerLink = document.getElementById('register-link');
+    const loginLink = document.getElementById('login-link');
 
-    async function registerUser(event) {
-        event.preventDefault();
-        const formData = new FormData(registerForm);
-        const username = formData.get("username");
-        const password = formData.get("password");
+    if (loginForm) {
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
 
-        try {
-            const response = await fetch(`${apiBaseUrl}/register`, {
-                method: "POST",
-                body: new URLSearchParams({ username, password }),
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded"
-                },
-                redirect: "follow"
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            const response = await fetch(`${backendUrl}/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
             });
 
-            if (response.redirected) {
-                window.location.href = response.url;
-            } else {
+            if (response.ok) {
                 const data = await response.json();
-                alert(data.detail || "Registration failed.");
-            }
-        } catch (error) {
-            console.error("Registration error:", error);
-            alert("Could not connect to the server. Please try again.");
-        }
-    }
-
-    async function loginUser(event) {
-        event.preventDefault();
-        const formData = new FormData(loginForm);
-        const username = formData.get("username");
-        const password = formData.get("password");
-
-        try {
-            const response = await fetch(`${apiBaseUrl}/login`, {
-                method: "POST",
-                body: new URLSearchParams({ username, password }),
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded"
-                },
-                redirect: "follow"
-            });
-
-            if (response.redirected) {
-                window.location.href = response.url;
+                localStorage.setItem('userId', data.user_id);
+                window.location.href = 'dashboard.html';
             } else {
-                const data = await response.json();
-                alert(data.detail || "Login failed.");
+                alert('Login failed. Check credentials.');
             }
-        } catch (error) {
-            console.error("Login error:", error);
-            alert("Could not connect to the server. Please try again.");
-        }
+        });
     }
 
     if (registerForm) {
-        registerForm.addEventListener("submit", registerUser);
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            const response = await fetch(`${backendUrl}/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+
+            if (response.ok) {
+                alert('Registration successful. Please log in.');
+                window.location.href = 'index.html';
+            } else {
+                alert('Registration failed. Try a different username.');
+            }
+        });
     }
 
-    if (loginForm) {
-        loginForm.addEventListener("submit", loginUser);
+    if (registerLink) {
+        registerLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.location.href = 'register.html';
+        });
+    }
+
+    if (loginLink) {
+        loginLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.location.href = 'index.html';
+        });
     }
 });
