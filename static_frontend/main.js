@@ -1,67 +1,64 @@
-const backendUrl = 'https://places-backend-o8ym.onrender.com';
+document.addEventListener("DOMContentLoaded", () => {
+    const backendUrl = "https://places-backend-o8ym.onrender.com";
 
-document.addEventListener('DOMContentLoaded', () => {
-    const loginForm = document.getElementById('login-form');
-    const registerForm = document.getElementById('register-form');
-    const registerLink = document.getElementById('register-link');
-    const loginLink = document.getElementById('login-link');
+    const authForm = document.getElementById("auth-form");
+    const toggleAuth = document.getElementById("toggle-auth");
+    const formTitle = document.getElementById("form-title");
+    const submitButton = document.getElementById("submit-button");
+    const messageDiv = document.getElementById("message");
 
-    if (loginForm) {
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
+    let isLogin = true;
 
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
+    authForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        messageDiv.textContent = "";
 
-            const response = await fetch(`${backendUrl}/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+        const username = document.getElementById("username").value;
+        const password = document.getElementById("password").value;
+
+        const endpoint = isLogin ? "/login" : "/register";
+        const url = `${backendUrl}${endpoint}`;
+
+        try {
+            const response = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ username, password })
             });
 
-            if (response.ok) {
-                const data = await response.json();
-                localStorage.setItem('userId', data.user_id);
-                window.location.href = 'dashboard.html';
-            } else {
-                alert('Login failed. Check credentials.');
+            if (!response.ok) {
+                const text = await response.text();
+                messageDiv.textContent = isLogin
+                    ? "Login failed. Please check your credentials."
+                    : "Registration failed. Try another username.";
+                return;
             }
-        });
-    }
 
-    if (registerForm) {
-        registerForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-
-            const response = await fetch(`${backendUrl}/register`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password })
-            });
-
-            if (response.ok) {
-                alert('Registration successful. Please log in.');
-                window.location.href = 'index.html';
+            if (isLogin) {
+                const result = await response.json();
+                window.location.href = "dashboard.html";
             } else {
-                alert('Registration failed. Try a different username.');
+                messageDiv.textContent = "Registration successful! Please log in.";
+                // Switch to login mode
+                isLogin = true;
+                formTitle.textContent = "Login";
+                submitButton.textContent = "Login";
+                toggleAuth.textContent = "Don't have an account? Register";
             }
-        });
-    }
+        } catch (error) {
+            console.error("Error:", error);
+            messageDiv.textContent = "Could not connect to the server. Please try again.";
+        }
+    });
 
-    if (registerLink) {
-        registerLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            window.location.href = 'register.html';
-        });
-    }
-
-    if (loginLink) {
-        loginLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            window.location.href = 'index.html';
-        });
-    }
+    toggleAuth.addEventListener("click", (e) => {
+        e.preventDefault();
+        isLogin = !isLogin;
+        formTitle.textContent = isLogin ? "Login" : "Register";
+        submitButton.textContent = isLogin ? "Login" : "Register";
+        toggleAuth.textContent = isLogin
+            ? "Don't have an account? Register"
+            : "Already have an account? Login";
+        messageDiv.textContent = "";
+    });
 });
