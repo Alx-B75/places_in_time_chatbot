@@ -1,64 +1,59 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const backendUrl = "https://places-backend-o8ym.onrender.com";
+  const authForm = document.getElementById("auth-form");
+  const toggleLink = document.getElementById("toggle-auth");
+  const formTitle = document.getElementById("form-title");
+  const submitButton = document.getElementById("submit-button");
+  const message = document.getElementById("message");
 
-    const authForm = document.getElementById("auth-form");
-    const toggleAuth = document.getElementById("toggle-auth");
-    const formTitle = document.getElementById("form-title");
-    const submitButton = document.getElementById("submit-button");
-    const messageDiv = document.getElementById("message");
+  let isLogin = true;
 
-    let isLogin = true;
+  toggleLink.addEventListener("click", (e) => {
+    e.preventDefault();
+    isLogin = !isLogin;
 
-    authForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        messageDiv.textContent = "";
+    formTitle.textContent = isLogin ? "Login" : "Register";
+    submitButton.textContent = isLogin ? "Login" : "Register";
+    toggleLink.textContent = isLogin
+      ? "Don't have an account? Register"
+      : "Already have an account? Login";
+    message.textContent = "";
+  });
 
-        const username = document.getElementById("username").value;
-        const password = document.getElementById("password").value;
+  authForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
 
-        const endpoint = isLogin ? "/login" : "/register";
-        const url = `${backendUrl}${endpoint}`;
+    const username = authForm.username.value;
+    const password = authForm.password.value;
+    const url = isLogin
+      ? "https://places-backend-o8ym.onrender.com/login"
+      : "https://places-backend-o8ym.onrender.com/register";
 
-        try {
-            const response = await fetch(url, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ username, password })
-            });
+    const formData = new FormData();
+    formData.append("username", username);
+    formData.append("password", password);
 
-            if (!response.ok) {
-                const text = await response.text();
-                messageDiv.textContent = isLogin
-                    ? "Login failed. Please check your credentials."
-                    : "Registration failed. Try another username.";
-                return;
-            }
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        body: formData,
+        redirect: "follow"
+      });
 
-            if (isLogin) {
-                const result = await response.json();
-                window.location.href = "dashboard.html";
-            } else {
-                messageDiv.textContent = "Registration successful! Please log in.";
-                // Switch to login mode
-                isLogin = true;
-                formTitle.textContent = "Login";
-                submitButton.textContent = "Login";
-                toggleAuth.textContent = "Don't have an account? Register";
-            }
-        } catch (error) {
-            console.error("Error:", error);
-            messageDiv.textContent = "Could not connect to the server. Please try again.";
-        }
-    });
+      if (response.redirected) {
+        window.location.href = response.url;
+        return;
+      }
 
-    toggleAuth.addEventListener("click", (e) => {
-        e.preventDefault();
-        isLogin = !isLogin;
-        formTitle.textContent = isLogin ? "Login" : "Register";
-        submitButton.textContent = isLogin ? "Login" : "Register";
-        toggleAuth.textContent = isLogin
-            ? "Don't have an account? Register"
-            : "Already have an account? Login";
-        messageDiv.textContent = "";
-    });
+      if (!response.ok) {
+        const data = await response.json();
+        message.textContent = data.detail || "Something went wrong.";
+      } else {
+        message.textContent = isLogin
+          ? "Logged in successfully!"
+          : "Registration successful!";
+      }
+    } catch (error) {
+      message.textContent = "Could not connect to the server. Please try again.";
+    }
+  });
 });
