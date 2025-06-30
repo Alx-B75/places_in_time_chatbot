@@ -1,8 +1,7 @@
 from sqlalchemy.orm import Session, selectinload
 from backend import models, schemas
-
-
-
+from backend.schemas import UserCreate
+from backend.models import User
 
 
 def get_all_chats(db: Session, limit: int = 100):
@@ -32,18 +31,19 @@ def get_user_by_id(db: Session, user_id: int):
     return db.query(models.User).filter(models.User.id == user_id).first()
 
 
-def create_user(db: Session, user: schemas.UserCreate):
+def create_user(db: Session, user: UserCreate) -> User:
     """
-    Create a new user in the database (no hashing yet).
+    Create a new user in the database.
     """
-    db_user = models.User(
+    db_user = User(
         username=user.username,
-        hashed_password=user.password  # will hash this later
+        hashed_password=user.hashed_password
     )
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
     return db_user
+
 
 def create_chat_message(db: Session, chat: schemas.ChatMessageCreate) -> models.Chat:
     """

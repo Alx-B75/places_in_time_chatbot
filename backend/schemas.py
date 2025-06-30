@@ -7,8 +7,7 @@ class UserCreate(BaseModel):
     Accepts user input for registration – expects a username and plain-text password.
     """
     username: str
-    # will be hashed in another development
-    password: str
+    hashed_password: str
 
 
 class UserRead(BaseModel):
@@ -139,7 +138,7 @@ class FigureContextRead(BaseModel):
     is_manual: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class HistoricalFigureRead(BaseModel):
@@ -155,7 +154,7 @@ class HistoricalFigureRead(BaseModel):
     short_summary: Optional[str]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class HistoricalFigureDetail(HistoricalFigureRead):

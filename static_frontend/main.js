@@ -7,12 +7,10 @@ document.addEventListener("DOMContentLoaded", function () {
   const toggleAuthLink = document.getElementById("toggle-auth");
   const submitButton = document.getElementById("submit-button");
 
-  // Initial state: User is on the login page by default.
   let isRegisterMode = false;
 
-  // Function to update the UI elements based on the current mode
   function updateUIForMode() {
-    messageDiv.textContent = ""; // Clear any previous messages
+    messageDiv.textContent = "";
 
     if (isRegisterMode) {
       formTitle.textContent = "Register";
@@ -25,24 +23,21 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  // Set initial UI state when the page loads
   updateUIForMode();
 
-  // Add event listener to toggle between login and register modes
   toggleAuthLink.addEventListener("click", (e) => {
-    e.preventDefault(); // Prevent default link behavior
-    isRegisterMode = !isRegisterMode; // Toggle the mode
-    updateUIForMode(); // Update the UI to reflect the new mode
+    e.preventDefault();
+    isRegisterMode = !isRegisterMode;
+    updateUIForMode();
   });
 
-  // Handle form submission
   if (authForm) {
     authForm.addEventListener("submit", async (e) => {
-      e.preventDefault(); // Prevent default form submission
+      e.preventDefault();
 
       const username = usernameInput.value.trim();
       const password = passwordInput.value;
-      messageDiv.textContent = ""; // Clear any previous messages
+      messageDiv.textContent = "";
 
       if (!username || !password) {
         messageDiv.textContent = "Please enter both username and password.";
@@ -54,12 +49,12 @@ document.addEventListener("DOMContentLoaded", function () {
       let failureMessage = "";
 
       if (isRegisterMode) {
-        url = "/register_user"; // Backend endpoint for registration
+        url = "/register";
         successMessage = "Registration successful! Please log in.";
         failureMessage = "Registration failed.";
       } else {
-        url = "/login_user"; // Backend endpoint for login
-        successMessage = "Login successful!"; // This message will often be bypassed by redirect
+        url = "/login";
+        successMessage = "Login successful!";
         failureMessage = "Login failed. Check your username and password.";
       }
 
@@ -67,32 +62,32 @@ document.addEventListener("DOMContentLoaded", function () {
         const response = await fetch(url, {
           method: "POST",
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type": "application/x-www-form-urlencoded",
           },
-          body: JSON.stringify({ username, password }),
+          body: new URLSearchParams({
+            username,
+            password
+          }),
         });
-
-        const data = await response.json(); // Parse the JSON response from the backend
 
         if (response.ok) {
           if (isRegisterMode) {
             messageDiv.textContent = successMessage;
-            // After successful registration, automatically switch to login mode
             isRegisterMode = false;
             updateUIForMode();
-            usernameInput.value = ''; // Clear username
-            passwordInput.value = ''; // Clear password
-          } else { // Login mode
+            usernameInput.value = '';
+            passwordInput.value = '';
+          } else {
+            const data = await response.json();
             if (data.user_id) {
-              localStorage.setItem("user_id", data.user_id); // Store user_id
-              window.location.href = "/static_frontend/dashboard.html"; // Redirect to dashboard
+              localStorage.setItem("user_id", data.user_id);
+              window.location.href = "/static_frontend/dashboard.html";
             } else {
-              // This case implies response.ok but no user_id, which shouldn't happen with a proper login endpoint
               messageDiv.textContent = "Login successful, but user ID not received.";
             }
           }
         } else {
-          // Display error message from backend or a generic one
+          const data = await response.json();
           messageDiv.textContent = data.detail || failureMessage;
         }
       } catch (error) {

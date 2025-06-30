@@ -19,8 +19,9 @@ from backend import crud, schemas, models
 from backend.routers import figures
 from typing import Optional
 from backend.figures_database import FigureSessionLocal
-from backend.models import HistoricalFigure
+from backend.models import HistoricalFigure, User
 from backend.vector.context_retriever import search_figure_context
+from utils.security import hash_password, verify_password
 import uvicorn
 
 load_dotenv()
@@ -54,27 +55,34 @@ class Query(BaseModel):
     question: str
 
 
-@app.post("/register_user", response_class=HTMLResponse)
-async def register_user(request: Request, db: Session = Depends(get_db_chat)):
-    """
-    Register a new user from form data and redirect to their thread page.
-    If the username already exists, show an error.
-    """
-    form_data = await request.form()
-    username = form_data["username"]
-    password = form_data["password"]
+@app.post("/login")
+async def login_user(
+    request: Request,
+    username: str = Form(...),
+    password: str = Form(...),
+    db: Session = Depends(get_db_chat)
+):
+    user = db.query(User).filter(User.username == username).first()
 
-    existing_user = crud.get_user_by_username(db, username=username)
-    if existing_user:
-        return HTMLResponse(
-            content=f"<h1>Error</h1><p>Username '{username}' already exists. Please go back and try a different name.</p>",
-            status_code=400
+    if not user or not verify_password(password, user.hashed_password):
+        return templates.TemplateResponse(
+            "login.html",
+            {"request": request, "error": "Invalid username or password"},
+            status_code=401
         )
 
-    user_data = schemas.UserCreate(username=username, password=password)
-    user = crud.create_user(db, user_data)
+    # TEMPORARY: Redirect with user_id in query string
+    return RedirectResponse(url=f"/figures/ask?user_id={user.id}", status_code=302)
 
-    return RedirectResponse(url=f"/user/{user.id}/threads", status_code=303)
+
+@app.get("/register", response_class=HTMLResponse)
+async def get_register_form(request: Request):
+    return templates.TemplateResponse("register.html", {"request": request})
+
+
+@app.get("/login", response_class=HTMLResponse)
+async def get_login_form(request: Request):
+    return templates.TemplateResponse("login.html", {"request": request})
 
 
 @app.post("/user/{user_id}/create_thread", response_class=HTMLResponse)
@@ -499,7 +507,9 @@ async def register_api(request: Request, db: Session = Depends(get_db_chat)):
     if not username or not password:
         raise HTTPException(status_code=400, detail="Username and password required")
 
-    user = crud.create_user(db, schemas.UserCreate(username=username, password=password))
+    hashed_pw = hash_password(password)
+
+    user = crud.create_user(db, schemas.UserCreate(username=username, hashed_password=hashed_pw))
     return RedirectResponse(f"/user/{user.id}/threads", status_code=303)
 
 
