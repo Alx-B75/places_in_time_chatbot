@@ -70,7 +70,7 @@ async def login_user(
         )
 
     # TEMPORARY: Redirect with user_id in query string
-    return RedirectResponse(url=f"/figures/ask?user_id={user.id}", status_code=302)
+    return RedirectResponse(url=f"/user/{user.id}/threads", status_code=302)
 
 
 @app.get("/register", response_class=HTMLResponse)
