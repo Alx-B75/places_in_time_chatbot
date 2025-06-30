@@ -9,6 +9,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let isRegisterMode = false;
 
+  const API_BASE_URL = "https://your-backend.onrender.com"; // Replace this with your actual Render backend URL
+
   function updateUIForMode() {
     messageDiv.textContent = "";
 
@@ -49,11 +51,11 @@ document.addEventListener("DOMContentLoaded", function () {
       let failureMessage = "";
 
       if (isRegisterMode) {
-        url = "/register";
+        url = `${API_BASE_URL}/register`;
         successMessage = "Registration successful! Please log in.";
         failureMessage = "Registration failed.";
       } else {
-        url = "/login";
+        url = `${API_BASE_URL}/login`;
         successMessage = "Login successful!";
         failureMessage = "Login failed. Check your username and password.";
       }
@@ -81,7 +83,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const data = await response.json();
             if (data.user_id) {
               localStorage.setItem("user_id", data.user_id);
-              window.location.href = "/static_frontend/dashboard.html";
+              window.location.href = "/dashboard.html";
             } else {
               messageDiv.textContent = "Login successful, but user ID not received.";
             }
