@@ -30,29 +30,33 @@ document.addEventListener("DOMContentLoaded", () => {
       const response = await fetch(`https://places-backend-o8ym.onrender.com${endpoint}`, {
         method: "POST",
         headers: {
-          "Accept": "application/json",
+          "Accept": "text/html",
         },
         body: new URLSearchParams({ username, password }),
-        redirect: "manual",
+        redirect: "manual"
       });
 
       if (response.status === 302 || response.status === 303) {
         const location = response.headers.get("Location");
-        window.location.href = location.startsWith("http")
-          ? location
-          : `https://places-backend-o8ym.onrender.com${location}`;
+        if (location) {
+          window.location.href = location.startsWith("http")
+            ? location
+            : `https://places-backend-o8ym.onrender.com${location}`;
+        } else {
+          messageDiv.textContent = "Redirect successful, but no location header was received.";
+        }
       } else if (response.status === 401) {
-        const errorData = await response.json();
-        messageDiv.textContent = `Login failed: ${errorData.detail}`;
+        messageDiv.textContent = "Login failed: Invalid username or password.";
       } else if (response.status === 400) {
-        const errorData = await response.json();
-        messageDiv.textContent = `Registration failed: ${errorData.detail}`;
+        const text = await response.text();
+        messageDiv.textContent = `Registration failed: ${text}`;
       } else {
         const text = await response.text();
         messageDiv.textContent = `Unexpected response (${response.status}): ${text}`;
       }
     } catch (error) {
-      messageDiv.textContent = `Could not connect to the server. Please try again.`;
+      console.error("Network error:", error);
+      messageDiv.textContent = "Could not connect to the server. Please check your internet connection and try again.";
     }
   });
 });
