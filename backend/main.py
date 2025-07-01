@@ -74,7 +74,7 @@ async def login_user(
             status_code=401
         )
 
-    return RedirectResponse(url=f"/figures/ask?user_id={user.id}", status_code=302)
+    return RedirectResponse(url=f"/user/{user.id}/threads", status_code=302)
 
 
 @app.get("/register", response_class=HTMLResponse)
