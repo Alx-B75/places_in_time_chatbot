@@ -5,13 +5,12 @@ print("===== DEBUG: SYSP =", sys.path)
 
 
 from fastapi import Depends, FastAPI, HTTPException, Form
-from fastapi.middleware.cors import CORSMiddleware
+
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, FileResponse
 from fastapi.requests import Request
 from pydantic import BaseModel
 from dotenv import load_dotenv
-import os
 from openai import OpenAI
 from sqlalchemy.orm import Session
 from backend.database import get_db_chat, SessionLocalFigure
@@ -536,6 +535,12 @@ async def create_new_thread(user_id: int, request: Request, db: Session = Depend
     crud.create_thread(db, new_thread)
 
     return RedirectResponse(url=f"/user/{user_id}/threads", status_code=303)
+
+
+@app.get("/download/chat_db", response_class=FileResponse)
+def download_chat_db():
+    return FileResponse(path="data/chat_history.db", filename="chat_history.db", media_type="application/octet-stream")
+
 
 
 app.include_router(figures.router)
