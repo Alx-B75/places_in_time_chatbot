@@ -1,54 +1,58 @@
-const BASE_URL = 'https://places-backend-o8ym.onrender.com';
+document.addEventListener("DOMContentLoaded", () => {
+  const form = document.getElementById("auth-form");
+  const toggleLink = document.getElementById("toggle-auth");
+  const title = document.getElementById("form-title");
+  const button = document.getElementById("submit-button");
+  const messageDiv = document.getElementById("message");
 
-const form = document.getElementById('auth-form');
-const toggleLink = document.getElementById('toggle-auth');
-const formTitle = document.getElementById('form-title');
-const submitButton = document.getElementById('submit-button');
-const messageDiv = document.getElementById('message');
+  let isLogin = true;
 
-let isLogin = true;
+  toggleLink.addEventListener("click", (e) => {
+    e.preventDefault();
+    isLogin = !isLogin;
+    title.textContent = isLogin ? "Login" : "Register";
+    button.textContent = isLogin ? "Login" : "Register";
+    toggleLink.textContent = isLogin
+      ? "Don't have an account? Register"
+      : "Already have an account? Login";
+    messageDiv.textContent = "";
+  });
 
-toggleLink.addEventListener('click', (e) => {
-  e.preventDefault();
-  isLogin = !isLogin;
-  formTitle.textContent = isLogin ? 'Login' : 'Register';
-  submitButton.textContent = isLogin ? 'Login' : 'Register';
-  toggleLink.textContent = isLogin
-    ? "Don't have an account? Register"
-    : 'Already have an account? Login';
-  messageDiv.textContent = '';
-});
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    messageDiv.textContent = "";
 
-form.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const username = form.username.value;
-  const password = form.password.value;
+    const username = form.username.value;
+    const password = form.password.value;
+    const endpoint = isLogin ? "/login" : "/register";
 
-  const endpoint = isLogin ? '/login' : '/register';
+    try {
+      const response = await fetch(`https://places-backend-o8ym.onrender.com${endpoint}`, {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+        },
+        body: new URLSearchParams({ username, password }),
+        redirect: "manual",
+      });
 
-  try {
-    const response = await fetch(`${BASE_URL}${endpoint}`, {
-      method: 'POST',
-      headers: {
-        'Accept': 'text/html',
-      },
-      body: new URLSearchParams({
-        username,
-        password,
-      }),
-      redirect: 'follow',
-    });
-
-    if (response.redirected) {
-      window.location.href = response.url;
-    } else if (response.status >= 400) {
-      const text = await response.text();
-      messageDiv.textContent = `Login failed. Server said: ${text}`;
-    } else {
-      messageDiv.textContent = 'Unexpected response. Please try again.';
+      if (response.status === 302 || response.status === 303) {
+        const location = response.headers.get("Location");
+        window.location.href = location.startsWith("http")
+          ? location
+          : `https://places-backend-o8ym.onrender.com${location}`;
+      } else if (response.status === 401) {
+        const errorData = await response.json();
+        messageDiv.textContent = `Login failed: ${errorData.detail}`;
+      } else if (response.status === 400) {
+        const errorData = await response.json();
+        messageDiv.textContent = `Registration failed: ${errorData.detail}`;
+      } else {
+        const text = await response.text();
+        messageDiv.textContent = `Unexpected response (${response.status}): ${text}`;
+      }
+    } catch (error) {
+      messageDiv.textContent = `Could not connect to the server. Please try again.`;
     }
-  } catch (error) {
-    console.error(error);
-    messageDiv.textContent = 'Could not connect to the server. Please try again.';
-  }
+  });
 });
