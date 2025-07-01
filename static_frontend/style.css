@@ -5,77 +5,102 @@ body {
   padding: 0;
 }
 
-.container {
-  max-width: 400px;
-  margin: 80px auto;
-  background: white;
-  padding: 2em;
-  border-radius: 8px;
-  box-shadow: 0 0 20px rgba(0,0,0,0.1);
-}
-
-h1 {
-  text-align: center;
-  margin-bottom: 1em;
-}
-
-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1em;
-}
-
-input[type="text"],
-input
 body.login-page {
-  font-family: Arial, sans-serif;
   background-color: #f5f7f8;
-  margin: 0;
-  padding: 0;
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
 }
 
-.login-container {
+/* Main wrapper */
+.centered-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
   width: 100%;
   max-width: 400px;
-  padding: 2rem;
-  text-align: center;
 }
 
+/* Logo image */
 .logo {
   max-width: 120px;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
 
+/* Form card */
 .form-box {
-  background: #fff;
+  background: #ffffff;
   padding: 2rem;
-  border-radius: 10px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  border-radius: 12px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.08);
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.form-box input {
-  width: 100%;
-  padding: 0.6rem;
-  margin: 0.5rem 0 1rem;
+/* Header */
+h1 {
+  text-align: center;
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Form structure */
+form {
+  display: flex;
+  flex-direction: column;
+}
+
+form label {
+  text-align: left;
+  font-weight: bold;
+  margin-bottom: 0.3rem;
+  margin-top: 1rem;
+}
+
+form input[type="text"],
+form input[type="password"] {
+  padding: 0.75rem;
+  font-size: 1rem;
   border: 1px solid #ccc;
-  border-radius: 5px;
+  border-radius: 6px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.form-box button {
-  width: 100%;
-  padding: 0.7rem;
+/* Submit button */
+#submit-button {
+  margin-top: 1.5rem;
   background-color: #005a71;
   color: white;
-  border: none;
-  border-radius: 5px;
+  font-size: 1rem;
   font-weight: bold;
+  padding: 0.75rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
 }
 
-.form-box a {
+#submit-button:hover {
+  background-color: #003f52;
+}
+
+/* Register link */
+#toggle-auth {
+  display: block;
+  margin-top: 1rem;
+  text-align: center;
   color: #005a71;
   text-decoration: none;
+  font-weight: 500;
+}
+
+/* Error message */
+.error-message {
+  color: #b00020;
+  margin-top: 1rem;
+  font-size: 0.95rem;
+  text-align: center;
 }
