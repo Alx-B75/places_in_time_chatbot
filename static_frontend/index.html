@@ -3,22 +3,32 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Places in Time – Authentication</title>
+  <title>Places in Time – Login</title>
   <link rel="stylesheet" href="style.css" />
 </head>
-<body>
-  <main class="centered-form">
-    <h1 id="form-title">Login</h1> <form id="auth-form">
-      <label for="username">Username:</label>
-      <input type="text" id="username" name="username" required autocomplete="username" />
+<body class="login-page">
+  <div class="login-container">
+    <img src="logo.png" alt="Places in Time Logo" class="logo" />
 
-      <label for="password">Password:</label>
-      <input type="password" id="password" name="password" required autocomplete="current-password" />
+    <main class="form-box">
+      <h1 id="form-title">Login</h1>
+      <form id="auth-form">
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required autocomplete="username" />
 
-      <button type="submit" id="submit-button">Login</button> </form>
-    <p>
-      <a href="#" id="toggle-auth">Don't have an account? Register</a> </p>
-    <div id="message" class="error-message"></div> </main>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required autocomplete="current-password" />
+
+        <button type="submit" id="submit-button">Login</button>
+      </form>
+
+      <p>
+        <a href="#" id="toggle-auth">Don't have an account? Register</a>
+      </p>
+      <div id="message" class="error-message"></div>
+    </main>
+  </div>
+
   <script src="main.js"></script>
 </body>
 </html>

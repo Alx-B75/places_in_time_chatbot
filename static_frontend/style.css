@@ -27,3 +27,55 @@ form {
 
 input[type="text"],
 input
+body.login-page {
+  font-family: Arial, sans-serif;
+  background-color: #f5f7f8;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.login-container {
+  width: 100%;
+  max-width: 400px;
+  padding: 2rem;
+  text-align: center;
+}
+
+.logo {
+  max-width: 120px;
+  margin-bottom: 1rem;
+}
+
+.form-box {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+.form-box input {
+  width: 100%;
+  padding: 0.6rem;
+  margin: 0.5rem 0 1rem;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.form-box button {
+  width: 100%;
+  padding: 0.7rem;
+  background-color: #005a71;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-weight: bold;
+}
+
+.form-box a {
+  color: #005a71;
+  text-decoration: none;
+}
