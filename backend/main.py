@@ -113,32 +113,27 @@ def delete_thread(thread_id: int, db: Session = Depends(get_db_chat)):
 
 
 
-@app.get("/user/{user_id}/threads", response_class=HTMLResponse)
-def user_threads(request: Request, user_id: int, db: Session = Depends(get_db_chat)):
+@app.get("/user/{user_id}/threads", response_class=FileResponse)
+def user_threads(user_id: int, db: Session = Depends(get_db_chat)):
     """
-    Display all chat threads associated with a given user ID.
+    Serve the static threads.html page for the given user.
 
     Args:
-        request (Request): The incoming HTTP request object.
-        user_id (int): The ID of the user whose threads are to be displayed.
-        db (Session): The active SQLAlchemy database session.
+        user_id (int): The ID of the user whose threads page is requested.
+        db (Session): The active SQLAlchemy database session (kept for validation).
 
     Returns:
-        HTMLResponse: Rendered HTML page listing all chat threads for the user.
+        FileResponse: The static HTML file for the user's threads page.
 
     Raises:
-        HTTPException: If the user does not exist in the database (404 Not Found).
+        HTTPException: If the user does not exist in the database.
     """
     user = crud.get_user_by_id(db, user_id=user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    threads = crud.get_threads_by_user(db, user_id=user_id)
-    return templates.TemplateResponse("threads.html", {
-        "request": request,
-        "user": user,
-        "threads": threads
-    })
+    return FileResponse("static_frontend/threads.html")
+
 
 
 @app.post("/ask", response_model=schemas.ChatMessageRead)
