@@ -114,25 +114,21 @@ def delete_thread(thread_id: int, db: Session = Depends(get_db_chat)):
 
 
 @app.get("/user/{user_id}/threads", response_class=FileResponse)
-def user_threads(user_id: int, db: Session = Depends(get_db_chat)):
+def user_threads(user_id: int):
     """
-    Serve the static threads.html page for the given user.
+    Serve the static threads.html page for the given user ID.
+
+    This simply returns the static HTML file. Any user-specific logic
+    (e.g., fetching threads) is handled via JavaScript on the frontend.
 
     Args:
-        user_id (int): The ID of the user whose threads page is requested.
-        db (Session): The active SQLAlchemy database session (kept for validation).
+        user_id (int): The ID of the user (passed to frontend JS).
 
     Returns:
-        FileResponse: The static HTML file for the user's threads page.
-
-    Raises:
-        HTTPException: If the user does not exist in the database.
+        FileResponse: Static HTML page served from static_frontend.
     """
-    user = crud.get_user_by_id(db, user_id=user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    return FileResponse("static_frontend/threads.html")
+    path = os.path.join("static_frontend", "threads.html")
+    return FileResponse(path, media_type="text/html")
 
 
 
