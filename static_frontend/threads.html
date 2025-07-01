@@ -1,195 +1,183 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Your Threads – Places in Time</title>
-    <style>
-        * {
-            box-sizing: border-box;
-        }
+  <meta charset="UTF-8">
+  <title>Your Threads – Places in Time</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f2f4f8;
-            color: #333;
-        }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f2f4f8;
+      color: #333;
+    }
 
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
 
-        header {
-            margin-bottom: 2rem;
-            text-align: center;
-        }
+    header {
+      margin-bottom: 2rem;
+      text-align: center;
+    }
 
-        h1 {
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
-            color: #1a1a1a;
-        }
+    .logo {
+      max-width: 100px;
+      margin-bottom: 1rem;
+    }
 
-        .description {
-            font-size: 1rem;
-            color: #555;
-        }
+    .threads-image {
+      max-width: 100%;
+      margin: 1.5rem auto;
+      display: block;
+      border-radius: 6px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
 
-        .thread-section {
-            margin-top: 3rem;
-        }
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+      color: #1a1a1a;
+    }
 
-        .thread-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 1rem;
-            padding: 0;
-            list-style: none;
-        }
+    .description {
+      font-size: 1rem;
+      color: #555;
+      max-width: 700px;
+      margin: 0 auto;
+    }
 
-        .thread-item {
-            background-color: white;
-            padding: 1rem;
-            border-left: 5px solid #0077cc;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-            border-radius: 5px;
-            transition: box-shadow 0.2s ease;
-        }
+    .thread-section {
+      margin-top: 3rem;
+    }
 
-        .thread-item:hover {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
+    .thread-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
+      padding: 0;
+      list-style: none;
+    }
 
-        .thread-item a {
-            text-decoration: none;
-            font-size: 1.1rem;
-            font-weight: bold;
-            color: #0077cc;
-        }
+    .thread-item {
+      background-color: white;
+      padding: 1rem;
+      border-left: 5px solid #0077cc;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+      border-radius: 5px;
+      transition: box-shadow 0.2s ease;
+    }
 
-        .thread-date {
-            font-size: 0.85rem;
-            color: #888;
-            margin-top: 0.3rem;
-        }
+    .thread-item:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
 
-        .thread-actions {
-            margin-top: 0.5rem;
-        }
+    .thread-item a {
+      text-decoration: none;
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: #0077cc;
+    }
 
-        .thread-actions form {
-            display: inline;
-        }
+    .thread-date {
+      font-size: 0.85rem;
+      color: #888;
+      margin-top: 0.3rem;
+    }
 
-        .thread-actions button {
-            font-size: 0.8rem;
-            background-color: #d9534f;
-            color: white;
-            border: none;
-            padding: 0.4rem 0.8rem;
-            border-radius: 4px;
-            cursor: pointer;
-        }
+    .thread-actions {
+      margin-top: 0.5rem;
+    }
 
-        .thread-actions button:hover {
-            background-color: #c9302c;
-        }
+    .thread-actions form {
+      display: inline;
+    }
 
-        form {
-            margin-top: 2rem;
-            display: flex;
-            flex-direction: column;
-            align-items: start;
-        }
+    .thread-actions button {
+      font-size: 0.8rem;
+      background-color: #d9534f;
+      color: white;
+      border: none;
+      padding: 0.4rem 0.8rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
 
-        input[type="text"] {
-            padding: 0.6rem;
-            font-size: 1rem;
-            width: 100%;
-            max-width: 400px;
-            margin-bottom: 0.8rem;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
+    .thread-actions button:hover {
+      background-color: #c9302c;
+    }
 
-        button {
-            padding: 0.6rem 1.2rem;
-            font-size: 1rem;
-            background-color: #0077cc;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background-color 0.2s ease;
-        }
+    form {
+      margin-top: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: start;
+    }
 
-        button:hover {
-            background-color: #005fa3;
-        }
+    button {
+      padding: 0.6rem 1.2rem;
+      font-size: 1rem;
+      background-color: #005a71;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
 
-        .back-link {
-            display: inline-block;
-            margin-top: 2.5rem;
-            text-decoration: none;
-            color: #444;
-            font-size: 0.95rem;
-        }
+    button:hover {
+      background-color: #004557;
+    }
 
-        .back-link:hover {
-            text-decoration: underline;
-        }
-
-        @media (max-width: 600px) {
-            .thread-list {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+    @media (max-width: 600px) {
+      .thread-list {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
 <body>
-<div class="container">
+  <div class="container">
     <header>
-        <h1>Your Chat Threads</h1>
-        <p class="description">
-            Threads are ongoing conversations with our historical guide. You can view past threads or start a new one.
-            Each thread keeps its own context so you can return to it any time.
-        </p>
+      <img src="logo.png" alt="Places in Time Logo" class="logo" />
+      <h1>Your Chat Threads</h1>
+      <p class="description">
+        Threads are ongoing conversations with our historical guides. You can view past threads or start a new one.
+        Each thread keeps its own context so you can return to it at any time.
+      </p>
+      <img src="threads_visual.png" alt="Historical illustration" class="threads-image" />
     </header>
 
     <section class="thread-section">
-        {% if threads %}
-            <ul class="thread-list">
-                {% for thread in threads %}
-                    <li class="thread-item">
-                        <a href="/thread/{{ thread.id }}">{{ thread.title or "Untitled Thread" }}</a>
-                        <div class="thread-date">Created: {{ thread.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
-                        <div class="thread-actions">
-                            <form method="post" action="/thread/{{ thread.id }}/delete" onsubmit="return confirm('Delete this thread?');">
-                                <button type="submit">Delete</button>
-                            </form>
-                        </div>
-                    </li>
-                {% endfor %}
-            </ul>
-        {% else %}
-            <p>You haven’t started any threads yet. Create one below to begin exploring history!</p>
-        {% endif %}
+      {% if threads %}
+        <ul class="thread-list">
+          {% for thread in threads %}
+            <li class="thread-item">
+              <a href="/thread/{{ thread.id }}">{{ thread.title or "Untitled Thread" }}</a>
+              <div class="thread-date">Created: {{ thread.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+              <div class="thread-actions">
+                <form method="post" action="/thread/{{ thread.id }}/delete" onsubmit="return confirm('Delete this thread?');">
+                  <button type="submit">Delete</button>
+                </form>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p>You haven’t started any threads yet. Click below to begin exploring history!</p>
+      {% endif %}
 
-        <form method="get" action="/figures/ask">
-            <input type="hidden" name="user_id" value="{{ user.id }}">
-            <button type="submit">Ask a Historical Figure</button>
-        </form>
+      <form method="get" action="/figures/ask">
+        <input type="hidden" name="user_id" value="{{ user.id }}">
+        <button type="submit">Ask a Historical Figure</button>
+      </form>
     </section>
-
-    <form action="/user/{{ user.id }}/create_thread" method="post">
-        <input type="text" name="title" placeholder="Enter a title for your new thread" required>
-        <button type="submit">Start New Thread</button>
-    </form>
-
-    <a href="/" class="back-link">← Return to Homepage</a>
-</div>
+  </div>
 </body>
 </html>
