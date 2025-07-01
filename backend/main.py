@@ -7,7 +7,7 @@ print("===== DEBUG: SYSP =", sys.path)
 from fastapi import Depends, FastAPI, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.requests import Request
 from pydantic import BaseModel
 from dotenv import load_dotenv
@@ -63,14 +63,19 @@ async def login_user(
     user = db.query(User).filter(User.username == username).first()
 
     if not user or not verify_password(password, user.hashed_password):
+        # If the request comes from JS (e.g. Accept: application/json), return JSON
+        if "application/json" in request.headers.get("accept", ""):
+            return JSONResponse(
+                content={"detail": "Invalid username or password"},
+                status_code=401
+            )
         return templates.TemplateResponse(
             "login.html",
             {"request": request, "error": "Invalid username or password"},
             status_code=401
         )
 
-    # TEMPORARY: Redirect with user_id in query string
-    return RedirectResponse(url=f"/user/{user.id}/threads", status_code=302)
+    return RedirectResponse(url=f"/figures/ask?user_id={user.id}", status_code=302)
 
 
 @app.get("/register", response_class=HTMLResponse)
