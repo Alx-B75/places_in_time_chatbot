@@ -1,62 +1,57 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const form = document.getElementById("auth-form");
-  const toggleLink = document.getElementById("toggle-auth");
-  const title = document.getElementById("form-title");
-  const button = document.getElementById("submit-button");
-  const messageDiv = document.getElementById("message");
+const form = document.getElementById("auth-form");
+const toggleLink = document.getElementById("toggle-auth");
+const formTitle = document.getElementById("form-title");
+const submitButton = document.getElementById("submit-button");
+const messageDiv = document.getElementById("message");
 
-  let isLogin = true;
+let isLogin = true;
 
-  toggleLink.addEventListener("click", (e) => {
-    e.preventDefault();
-    isLogin = !isLogin;
-    title.textContent = isLogin ? "Login" : "Register";
-    button.textContent = isLogin ? "Login" : "Register";
-    toggleLink.textContent = isLogin
-      ? "Don't have an account? Register"
-      : "Already have an account? Login";
-    messageDiv.textContent = "";
-  });
+const BACKEND_URL = "https://places-backend-o8ym.onrender.com";
 
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    messageDiv.textContent = "";
+toggleLink.addEventListener("click", (e) => {
+  e.preventDefault();
+  isLogin = !isLogin;
 
-    const username = form.username.value;
-    const password = form.password.value;
-    const endpoint = isLogin ? "/login" : "/register";
+  formTitle.textContent = isLogin ? "Login" : "Register";
+  submitButton.textContent = isLogin ? "Login" : "Register";
+  toggleLink.textContent = isLogin
+    ? "Don't have an account? Register"
+    : "Already have an account? Login";
+  messageDiv.textContent = "";
+});
 
-    try {
-      const response = await fetch(`https://places-backend-o8ym.onrender.com${endpoint}`, {
-        method: "POST",
-        headers: {
-          "Accept": "text/html",
-        },
-        body: new URLSearchParams({ username, password }),
-        redirect: "manual"
-      });
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
 
-      if (response.status === 302 || response.status === 303) {
-        const location = response.headers.get("Location");
-        if (location) {
-          window.location.href = location.startsWith("http")
-            ? location
-            : `https://places-backend-o8ym.onrender.com${location}`;
-        } else {
-          messageDiv.textContent = "Redirect successful, but no location header was received.";
-        }
-      } else if (response.status === 401) {
-        messageDiv.textContent = "Login failed: Invalid username or password.";
-      } else if (response.status === 400) {
-        const text = await response.text();
-        messageDiv.textContent = `Registration failed: ${text}`;
+  const formData = new FormData(form);
+  const endpoint = isLogin ? "/login" : "/register";
+
+  try {
+    const response = await fetch(`${BACKEND_URL}${endpoint}`, {
+      method: "POST",
+      body: formData,
+      redirect: "follow",
+    });
+
+    if (response.redirected) {
+      window.location.href = response.url;
+    } else if (!response.ok) {
+      const text = await response.text();
+      let errorMessage = "Login or registration failed.";
+      if (response.status === 401) {
+        errorMessage = "Invalid username or password.";
+      } else if (response.status === 400 && text.includes("Username and password required")) {
+        errorMessage = "Please enter both a username and password.";
+      } else if (response.status === 400 || text.includes("UNIQUE constraint failed")) {
+        errorMessage = "Username already exists.";
       } else {
-        const text = await response.text();
-        messageDiv.textContent = `Unexpected response (${response.status}): ${text}`;
+        errorMessage = `Unexpected server response (${response.status}).`;
       }
-    } catch (error) {
-      console.error("Network error:", error);
-      messageDiv.textContent = "Could not connect to the server. Please check your internet connection and try again.";
+      messageDiv.textContent = errorMessage;
+    } else {
+      messageDiv.textContent = "Success, redirecting...";
     }
-  });
+  } catch (err) {
+    messageDiv.textContent = "Could not connect to the server. Please try again.";
+  }
 });
