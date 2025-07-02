@@ -1,3 +1,5 @@
+import os
+from openai import OpenAI
 from fastapi import APIRouter, Depends, HTTPException, Request, Query, Form
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
@@ -10,12 +12,14 @@ from backend.figures_database import FigureSessionLocal
 from backend.vector.context_retriever import search_figure_context
 from pydantic import BaseModel
 
+# --- Initialization ---
 router = APIRouter(
     prefix="/figures",
     tags=["Figures"]
 )
 
 templates = Jinja2Templates(directory="frontend/templates")
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))  # Initialize the OpenAI client here
 
 
 def get_figure_db():
@@ -75,7 +79,6 @@ def get_ask_figure_page(
     })
 
 
-# --- NEWLY ADDED POST ROUTE ---
 @router.post("/ask", response_class=HTMLResponse)
 async def ask_figure_submit(
         request: Request,
@@ -116,7 +119,7 @@ async def ask_figure_submit(
 
     formatted_messages.extend([{"role": m.role, "content": m.message} for m in all_messages])
 
-    client = crud.get_openai_client()
+    # This now correctly uses the client defined at the top of the file
     response = client.chat.completions.create(
         model="gpt-4o", messages=formatted_messages, temperature=0.7
     )
