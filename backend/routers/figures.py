@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, Query
+from fastapi import APIRouter, Depends, HTTPException, Request, Query, Form
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -15,12 +15,10 @@ router = APIRouter(
     tags=["Figures"]
 )
 
-# We define the templates object here to make the router self-contained
 templates = Jinja2Templates(directory="frontend/templates")
 
 
 def get_figure_db():
-    """Yields a session for the historical figures database."""
     db = FigureSessionLocal()
     try:
         yield db
@@ -34,21 +32,14 @@ class SearchQuery(BaseModel):
     figure_slug: str
 
 
-# --- NEW ROUTE - Placed BEFORE the generic "/{slug}" route ---
 @router.get("/ask", response_class=HTMLResponse)
 def get_ask_figure_page(
-    request: Request,
-    figure_slug: Optional[str] = Query(None),
-    user_id: Optional[str] = Query(None),
-    thread_id: Optional[int] = None,
-    db: Session = Depends(get_db_chat)
+        request: Request,
+        figure_slug: Optional[str] = Query(None),
+        user_id: Optional[str] = Query(None),
+        thread_id: Optional[int] = None,
+        db: Session = Depends(get_db_chat)
 ):
-    """
-    Handles the page for selecting or asking a historical figure.
-    If no figure_slug is provided, it shows a selection page.
-    Otherwise, it shows the chat interface for the selected figure.
-    """
-    # This logic shows the figure selection page
     if not figure_slug:
         figures = [
             {"slug": "emperor-hadrian", "name": "Emperor Hadrian"},
@@ -61,7 +52,6 @@ def get_ask_figure_page(
             "user_id_value": user_id
         })
 
-    # This logic handles displaying the chat page for a specific figure
     fig_db = FigureSessionLocal()
     figure = fig_db.query(models.HistoricalFigure).filter(models.HistoricalFigure.slug == figure_slug).first()
     fig_db.close()
@@ -85,15 +75,76 @@ def get_ask_figure_page(
     })
 
 
+# --- NEWLY ADDED POST ROUTE ---
+@router.post("/ask", response_class=HTMLResponse)
+async def ask_figure_submit(
+        request: Request,
+        figure_slug: str = Form(...),
+        user_id: int = Form(...),
+        message: str = Form(...),
+        thread_id: Optional[int] = Form(None),
+        db: Session = Depends(get_db_chat)
+):
+    fig_db = FigureSessionLocal()
+    figure = fig_db.query(models.HistoricalFigure).filter(models.HistoricalFigure.slug == figure_slug).first()
+    fig_db.close()
+
+    if not figure:
+        raise HTTPException(status_code=404, detail="Figure not found")
+
+    if thread_id:
+        thread = crud.get_thread_by_id(db, thread_id)
+        if not thread:
+            raise HTTPException(status_code=404, detail="Thread not found")
+    else:
+        thread_data = schemas.ThreadCreate(user_id=user_id, title=f"Chat with {figure.name}")
+        thread = crud.create_thread(db, thread=thread_data)
+        thread_id = thread.id
+
+    crud.create_chat_message(db, schemas.ChatMessageCreate(
+        user_id=user_id, role="user", message=message, thread_id=thread_id
+    ))
+
+    system_prompt = figure.persona_prompt or "You are a helpful historical guide."
+    context_chunks = search_figure_context(query=message, figure_slug=figure_slug)
+    context_text = "\n\n".join([chunk["content"] for chunk in context_chunks]) if context_chunks else ""
+
+    all_messages = crud.get_messages_by_thread(db, thread_id)
+    formatted_messages = [{"role": "system", "content": system_prompt}]
+    if context_text:
+        formatted_messages.append({"role": "system", "content": f"Relevant historical context:\n{context_text}"})
+
+    formatted_messages.extend([{"role": m.role, "content": m.message} for m in all_messages])
+
+    client = crud.get_openai_client()
+    response = client.chat.completions.create(
+        model="gpt-4o", messages=formatted_messages, temperature=0.7
+    )
+    reply = response.choices[0].message.content
+
+    crud.create_chat_message(db, schemas.ChatMessageCreate(
+        user_id=user_id, role="assistant", message=reply, thread_id=thread_id
+    ))
+
+    updated_messages = crud.get_messages_by_thread(db, thread_id)
+
+    return templates.TemplateResponse("ask_figure.html", {
+        "request": request,
+        "figure": figure,
+        "thread": thread,
+        "messages": updated_messages,
+        "user_id_value": user_id,
+        "context_text": context_text
+    })
+
+
 @router.get("/", response_model=list[schemas.HistoricalFigureRead])
 def read_all_figures(skip: int = 0, limit: int = 100, db: Session = Depends(get_figure_db)):
-    """Retrieve a paginated list of all historical figures."""
     return crud.get_all_figures(db, skip=skip, limit=limit)
 
 
 @router.get("/{slug}", response_model=schemas.HistoricalFigureDetail)
 def read_figure_by_slug(slug: str, db: Session = Depends(get_figure_db)):
-    """Retrieve a single historical figure and their context entries by slug."""
     figure = crud.get_figure_by_slug(db, slug=slug)
     if not figure:
         raise HTTPException(status_code=404, detail="Figure not found")
@@ -102,7 +153,6 @@ def read_figure_by_slug(slug: str, db: Session = Depends(get_figure_db)):
 
 @router.post("/search_context/")
 def search_figure_context_route(query: SearchQuery):
-    """Search the Chroma vector store for relevant historical figure context chunks."""
     results = search_figure_context(
         query=query.query,
         top_k=query.top_k,
