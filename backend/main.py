@@ -7,6 +7,7 @@ from fastapi import Depends, FastAPI, HTTPException, Form, Request, Query as Fas
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -183,7 +184,11 @@ def delete_thread(thread_id: int, db: Session = Depends(get_db_chat)):
 def download_chat_db():
     return FileResponse(path="data/chat_history.db", filename="chat_history.db", media_type="application/octet-stream")
 
+# --- API routers
 app.include_router(figures.router)
+
+# --- Mount Static Files
+app.mount("/", StaticFiles(directory="static_frontend"), name="static")
 
 # --- Main Runner ---
 if __name__ == "__main__":
