@@ -2,209 +2,42 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ thread.title or "Thread" }} – Places in Time</title>
-    <style>
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            height: 100vh;
-            background-color: #f2f4f8;
-            color: #333;
-        }
-
-        aside {
-            width: 260px;
-            background: #f9fbff;
-            padding: 1.5rem 1rem;
-            border-right: 1px solid #ccc;
-            overflow-y: auto;
-        }
-
-        aside h3 {
-            font-size: 1.2rem;
-            margin-bottom: 1rem;
-            color: #0077cc;
-        }
-
-        aside ul {
-            padding: 0;
-            margin: 0;
-            list-style: none;
-        }
-
-        aside li {
-            margin-bottom: 0.5rem;
-        }
-
-        aside a {
-            text-decoration: none;
-            color: #0077cc;
-            font-size: 0.95rem;
-        }
-
-        aside a:hover {
-            text-decoration: underline;
-        }
-
-        main {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .messages {
-            flex-grow: 1;
-            padding: 2rem;
-            overflow-y: auto;
-        }
-
-        .messages h2 {
-            margin-bottom: 1.5rem;
-            font-size: 1.5rem;
-        }
-
-        .message {
-            margin-bottom: 1.2rem;
-            padding: 0.9rem 1rem;
-            border-left: 5px solid #0077cc;
-            background: #ffffff;
-            border-radius: 4px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-        }
-
-        .message.assistant {
-            border-left-color: #00aa55;
-            background: #f4fff9;
-        }
-
-        .message strong {
-            display: block;
-            font-weight: bold;
-            color: #0077cc;
-            margin-bottom: 0.4rem;
-        }
-
-        .message.assistant strong {
-            color: #00aa55;
-        }
-
-        .timestamp {
-            font-size: 0.8rem;
-            color: #888;
-            margin-top: 0.4rem;
-        }
-
-        .empty-message {
-            font-style: italic;
-            color: #666;
-            background-color: #fffbea;
-            border-left: 5px solid #ffcc00;
-            padding: 1rem;
-            border-radius: 4px;
-            margin-bottom: 2rem;
-        }
-
-        form {
-            padding: 1.5rem 2rem;
-            border-top: 1px solid #ccc;
-            background: #fafafa;
-            display: flex;
-            align-items: center;
-        }
-
-        input[type="text"] {
-            flex-grow: 1;
-            padding: 0.75rem;
-            font-size: 1rem;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            margin-right: 1rem;
-        }
-
-        button {
-            padding: 0.75rem 1.2rem;
-            font-size: 1rem;
-            background-color: #0077cc;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background-color: #005fa3;
-        }
-
-        @media (max-width: 768px) {
-            body {
-                flex-direction: column;
-            }
-
-            aside {
-                width: 100%;
-                border-right: none;
-                border-bottom: 1px solid #ccc;
-            }
-
-            main {
-                height: auto;
-            }
-
-            form {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            input[type="text"] {
-                margin: 0 0 1rem 0;
-                width: 100%;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="/style.css" />
 </head>
-<body>
+<body class="threads-page">
+<div class="threads-container">
+    <img src="/logo.png" alt="Places in Time Logo" class="logo" />
 
-    <aside>
-        <h3>Your Threads</h3>
-        <ul>
-            <li><a href="/">← Back to Homepage</a></li>
-            {% for t in threads %}
-                <li><a href="/thread/{{ t.id }}">{{ t.title or "Untitled Thread" }}</a></li>
-            {% endfor %}
-        </ul>
-    </aside>
+    <main class="form-box">
+        <h1>{{ thread.title or "Chat Thread" }}</h1>
 
-    <main>
-        <div class="messages">
-            <h2>{{ thread.title or "Thread" }}</h2>
-
+        <div class="messages-container">
             {% if messages %}
                 {% for msg in messages %}
-                    <div class="message {{ msg.role }}">
-                        <strong>{{ "You" if msg.role == "user" else "Historical Guide" }}</strong>
-                        {{ msg.message }}
-                        <div class="timestamp">{{ msg.timestamp }}</div>
+                    <div class="message-wrapper {{ 'user-message' if msg.role == 'user' else 'assistant-message' }}">
+                        <div class="message-bubble">
+                            <span class="message-role">{{ "You" if msg.role == "user" else "Historical Guide" }}</span>
+                            <p class="message-content">{{ msg.message }}</p>
+                        </div>
                     </div>
                 {% endfor %}
             {% else %}
-                <div class="empty-message">
-                    No messages yet. Ask your first question to get started!
-                </div>
+                <p>No messages yet. Ask a question to get started!</p>
             {% endif %}
         </div>
 
-        <form method="POST" action="/chat/complete">
-            <input type="hidden" name="user_id" value="{{ thread.user_id }}">
-            <input type="hidden" name="thread_id" value="{{ thread.id }}">
-            <input type="text" name="message" placeholder="Ask a new question..." required>
-            <button type="submit">Send</button>
+        <form method="POST" action="/chat/complete" class="chat-form">
+            <input type="hidden" name="user_id" value="{{ user_id }}">
+            <input type="hidden" name="thread_id" value="{{ thread_id }}">
+            <textarea name="message" placeholder="Ask a follow-up question..." rows="3" required></textarea>
+            <button type="submit" id="submit-button">Send</button>
         </form>
+
+        <a href="/user/{{ user_id }}/threads" class="secondary-button">← Back to All Threads</a>
     </main>
+</div>
 
 </body>
 </html>
