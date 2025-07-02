@@ -183,6 +183,7 @@ def delete_thread(thread_id: int, db: Session = Depends(get_db_chat)):
 def download_chat_db():
     return FileResponse(path="data/chat_history.db", filename="chat_history.db", media_type="application/octet-stream")
 
+app.include_router(figures.router)
 
 # --- Main Runner ---
 if __name__ == "__main__":
