@@ -2,118 +2,41 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <title>Ask a Historical Figure – Places in Time</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f4f4f4;
-            padding: 2rem;
-        }
-        .container {
-            max-width: 700px;
-            margin: auto;
-            background: #fff;
-            padding: 2rem;
-            border-radius: 8px;
-        }
-        input,
-        textarea,
-        select,
-        button {
-            width: 100%;
-            padding: 0.75rem;
-            margin-top: 1rem;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-        button {
-            background: #0077cc;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        button:hover {
-            background: #005fa3;
-        }
-        .messages {
-            margin-top: 2rem;
-            background: #eef6ff;
-            padding: 1rem;
-            border-radius: 6px;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-        .message {
-            margin-bottom: 1rem;
-        }
-        .message .role {
-            font-weight: bold;
-            color: #005fa3;
-        }
-        .message .content {
-            margin-left: 0.5rem;
-            white-space: pre-wrap;
-        }
-        label {
-            font-weight: 600;
-        }
-    </style>
+    <title>Ask {{ figure.name }} – Places in Time</title>
+    <link rel="stylesheet" href="/style.css" />
 </head>
-<body>
-<div class="container">
-    <h1>Ask a Historical Figure</h1>
+<body class="threads-page"> <div class="threads-container"> <img src="/logo.png" alt="Places in Time Logo" class="logo" />
 
-    <form action="/figures/ask" method="post">
-        <label for="user_id">User ID:</label>
-        <input
-            type="number"
-            name="user_id"
-            id="user_id"
-            value="{{ user_id_value or '' }}"
-            required
-        />
+    <main class="form-box">
+        <h1>Chat with {{ figure.name }}</h1>
+        <p>{{ figure.summary | default('No summary available.') }}</p>
 
-        <label for="figure_slug">Historical Figure:</label>
-        <select name="figure_slug" id="figure_slug" required>
-            <option value="emperor-hadrian" {% if figure.slug == "emperor-hadrian" %}selected{% endif %}>Emperor Hadrian</option>
-            <option value="flavius-cerialis" {% if figure.slug == "flavius-cerialis" %}selected{% endif %}>Flavius Cerialis</option>
-            <option value="guy-fawkes" {% if figure.slug == "guy-fawkes" %}selected{% endif %}>Guy Fawkes</option>
-        </select>
-
-        <label for="message">Your Question:</label>
-        <textarea name="message" id="message" rows="4" required></textarea>
-
-        {% if thread %}
-          <input type="hidden" name="thread_id" value="{{ thread.id }}" />
+        {% if messages %}
+        <div class="messages-container">
+            {% for msg in messages %}
+                <div class="message-wrapper {{ 'user-message' if msg.role == 'user' else 'assistant-message' }}">
+                    <div class="message-bubble">
+                        <span class="message-role">{{ msg.role.title() }}</span>
+                        <p class="message-content">{{ msg.message }}</p>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
         {% endif %}
 
+        <form action="/figures/ask" method="post" class="chat-form">
+            <input type="hidden" name="user_id" value="{{ user_id_value }}" />
+            <input type="hidden" name="figure_slug" value="{{ figure.slug }}" />
+            {% if thread %}
+              <input type="hidden" name="thread_id" value="{{ thread.id }}" />
+            {% endif %}
 
-        <button type="submit">Ask</button>
-    </form>
+            <textarea name="message" placeholder="Ask your question..." rows="3" required></textarea>
+            <button type="submit" id="submit-button">Send</button>
+        </form>
 
-    {% if messages %}
-    <div class="messages" aria-live="polite" aria-label="Chat history">
-        {% for msg in messages %}
-            <div class="message">
-                <span class="role">{{ msg.role.title() }}:</span>
-                <span class="content">{{ msg.message }}</span>
-            </div>
-        {% endfor %}
-        {% if context_text %}
-        <div class="context-debug" style="margin-top:2rem; background:#fffbe6; padding:1rem;">
-            <h3>Chroma Context Used:</h3>
-            <pre>{{ context_text }}</pre>
-        </div>
-{% endif %}
-
-    </div>
-    {% endif %}
-    {% if user_id_value %}
-    <a href="/user/{{ user_id_value }}/threads" style="display: inline-block; margin-top: 2rem; text-decoration: none; color: #444;">
-        ← Back to Threads
-    </a>
-{% endif %}
+        <a href="/user/{{ user_id_value }}/threads" class="secondary-button">← Back to All Threads</a>
+    </main>
 </div>
 </body>
 </html>

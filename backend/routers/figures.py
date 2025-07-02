@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Query, Form
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
-from typing import Optional
+from typing import Optional, List
 
 from backend import models, schemas, crud
 from backend.database import get_db_chat
@@ -19,7 +19,7 @@ router = APIRouter(
 )
 
 templates = Jinja2Templates(directory="frontend/templates")
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))  # Initialize the OpenAI client here
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 
 def get_figure_db():
@@ -42,24 +42,20 @@ def get_ask_figure_page(
         figure_slug: Optional[str] = Query(None),
         user_id: Optional[str] = Query(None),
         thread_id: Optional[int] = None,
-        db: Session = Depends(get_db_chat)
+        db: Session = Depends(get_db_chat),
+        fig_db: Session = Depends(get_figure_db)  # Added figure DB dependency
 ):
     if not figure_slug:
-        figures = [
-            {"slug": "emperor-hadrian", "name": "Emperor Hadrian"},
-            {"slug": "flavius-cerialis", "name": "Flavius Cerialis"},
-            {"slug": "guy-fawkes", "name": "Guy Fawkes"},
-        ]
+        # UPDATED: This now fetches all figures from the database
+        all_figures = crud.get_all_figures(db=fig_db)
         return templates.TemplateResponse("figure_select.html", {
             "request": request,
-            "figures": figures,
+            "figures": all_figures,
             "user_id_value": user_id
         })
 
-    fig_db = FigureSessionLocal()
+    # This logic for showing a specific figure is unchanged
     figure = fig_db.query(models.HistoricalFigure).filter(models.HistoricalFigure.slug == figure_slug).first()
-    fig_db.close()
-
     if not figure:
         raise HTTPException(status_code=404, detail="Figure not found")
 
@@ -79,6 +75,7 @@ def get_ask_figure_page(
     })
 
 
+# The rest of the file is unchanged...
 @router.post("/ask", response_class=HTMLResponse)
 async def ask_figure_submit(
         request: Request,
@@ -119,7 +116,6 @@ async def ask_figure_submit(
 
     formatted_messages.extend([{"role": m.role, "content": m.message} for m in all_messages])
 
-    # This now correctly uses the client defined at the top of the file
     response = client.chat.completions.create(
         model="gpt-4o", messages=formatted_messages, temperature=0.7
     )
@@ -141,7 +137,7 @@ async def ask_figure_submit(
     })
 
 
-@router.get("/", response_model=list[schemas.HistoricalFigureRead])
+@router.get("/", response_model=List[schemas.HistoricalFigureRead])
 def read_all_figures(skip: int = 0, limit: int = 100, db: Session = Depends(get_figure_db)):
     return crud.get_all_figures(db, skip=skip, limit=limit)
 
