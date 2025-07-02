@@ -145,3 +145,59 @@ form input[type="password"] {
   color: #005a71;
   text-decoration: none;
 }
+/* --- Threads Page Enhancements --- */
+
+.threads-container .form-box {
+  text-align: left;
+}
+
+.threads-header {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  margin-bottom: 2.5rem;
+  flex-wrap: wrap;
+}
+
+.threads-header-text {
+  flex: 1;
+  min-width: 300px;
+}
+
+.threads-header-text h1 {
+  text-align: left;
+  margin-top: 0;
+}
+
+.threads-image {
+  flex-basis: 300px; /* Give the image a base size */
+  max-width: 40%;    /* Ensure it doesn't get too large */
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+#threads-list {
+  margin-top: 1.5rem;
+  margin-bottom: 2rem;
+  border-top: 1px solid #eee;
+  padding-top: 1.5rem;
+}
+
+.primary-button {
+  display: inline-block;
+  background-color: #005a71;
+  color: white;
+  font-size: 1.1rem;
+  font-weight: bold;
+  padding: 0.8rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  text-decoration: none;
+  text-align: center;
+  transition: background-color 0.2s;
+}
+
+.primary-button:hover {
+  background-color: #003f52;
+}

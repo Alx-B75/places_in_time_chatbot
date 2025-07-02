@@ -60,43 +60,60 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // === THREADS PAGE LOGIC ===
-  if (pathname.includes("/user/") && pathname.includes("/threads")) {
+if (pathname.includes("/user/") && pathname.includes("/threads")) {
     const userIdMatch = pathname.match(/\/user\/(\d+)\/threads/);
     const userId = userIdMatch ? userIdMatch[1] : null;
 
     if (userId) {
-      // FIX: Corrected the API endpoint to match the backend route.
-      fetch(`${backendUrl}/threads/user/${userId}`)
-        .then((res) => {
-            if (!res.ok) {
-                throw new Error(`Server responded with status: ${res.status}`);
-            }
-            return res.json();
-        })
-        .then((threads) => {
-          const threadsList = document.getElementById("threads-list");
-          if (!threadsList) return;
+        // --- This is the new code to add ---
+        const newThreadButton = document.getElementById("new-thread-button");
+        if (newThreadButton) {
+            newThreadButton.addEventListener("click", () => {
+                // Navigate to the backend's page for asking a new figure, passing the user's ID
+                window.location.href = `${backendUrl}/figures/ask?user_id=${userId}`;
+            });
+        }
+        // --- End of new code ---
 
-          if (!threads || threads.length === 0) {
-            threadsList.innerHTML = "<p>You have no chat threads. Start a new one!</p>";
-            return;
-          }
+        // This is your existing code for fetching and displaying threads
+        fetch(`${backendUrl}/threads/user/${userId}`)
+            .then((res) => {
+                if (!res.ok) {
+                    throw new Error(`Server responded with status: ${res.status}`);
+                }
+                return res.json();
+            })
+            .then((threads) => {
+                const threadsList = document.getElementById("threads-list");
+                if (!threadsList) return;
 
-          threadsList.innerHTML = ""; // Clear any loading text
-          threads.forEach((thread) => {
-            const item = document.createElement("div");
-            item.className = "thread-box"; // Using a class from your CSS
-            // Note: This link still points to the backend. A future improvement
-            // would be to make this a frontend route like `/thread/${thread.id}`.
-            item.innerHTML = `
-              <a href="${backendUrl}/thread/${thread.id}">
-                ${thread.title || "Untitled Thread"}
-              </a>
-              <p>Created: ${new Date(thread.created_at).toLocaleString()}</p>
-            `;
-            threadsList.appendChild(item);
-          });
-        })
+                if (!threads || threads.length === 0) {
+                    threadsList.innerHTML = "<p>You have no chat threads. Start a new one!</p>";
+                    return;
+                }
+
+                threadsList.innerHTML = ""; // Clear any loading text
+                threads.forEach((thread) => {
+                    const item = document.createElement("div");
+                    item.className = "thread-box";
+                    item.innerHTML = `
+                        <a href="${backendUrl}/thread/${thread.id}">
+                            ${thread.title || "Untitled Thread"}
+                        </a>
+                        <p>Created: ${new Date(thread.created_at).toLocaleString()}</p>
+                    `;
+                    threadsList.appendChild(item);
+                });
+            })
+            .catch((err) => {
+                const threadsList = document.getElementById("threads-list");
+                if (threadsList) {
+                    threadsList.innerHTML = "<p style='color: red;'>Error: Could not load your threads.</p>";
+                }
+                console.error("Error loading threads:", err);
+            });
+    }
+}
         .catch((err) => {
           const threadsList = document.getElementById("threads-list");
           if (threadsList) {
