@@ -1,13 +1,14 @@
 document.addEventListener("DOMContentLoaded", () => {
   const pathname = window.location.pathname;
+  const backendUrl = "https://places-backend-o8ym.onrender.com";
 
-  // === LOGIN + REGISTER ===
-  const form = document.getElementById("auth-form");
+  // === LOGIN + REGISTER LOGIC ===
+  const authForm = document.getElementById("auth-form");
   const toggleLink = document.getElementById("toggle-auth");
   const formTitle = document.getElementById("form-title");
   const messageBox = document.getElementById("message");
 
-  if (form && toggleLink && formTitle) {
+  if (authForm && toggleLink && formTitle) {
     let isLogin = true;
 
     toggleLink.addEventListener("click", (e) => {
@@ -17,73 +18,91 @@ document.addEventListener("DOMContentLoaded", () => {
       toggleLink.textContent = isLogin
         ? "Don't have an account? Register"
         : "Already have an account? Login";
-      form.querySelector("button").textContent = isLogin ? "Login" : "Register";
+      authForm.querySelector("button").textContent = isLogin ? "Login" : "Register";
+      messageBox.textContent = ""; // Clear any previous error messages
     });
 
-    form.addEventListener("submit", async (e) => {
+    authForm.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const username = form.username.value;
-      const password = form.password.value;
+      const username = authForm.username.value;
+      const password = authForm.password.value;
       const endpoint = isLogin ? "login" : "register";
+      messageBox.textContent = ""; // Clear message box
 
       try {
-        const response = await fetch(`https://places-backend-o8ym.onrender.com/${endpoint}`, {
+        const response = await fetch(`${backendUrl}/${endpoint}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
             Accept: "application/json",
           },
           body: new URLSearchParams({ username, password }),
-          redirect: "follow",
+          // We no longer expect a redirect, so the 'redirect' property is removed.
         });
 
-        if (response.redirected) {
-          window.location.href = response.url;
-        } else if (response.status === 401) {
-          const errorData = await response.json();
-          messageBox.textContent = "Login failed: " + (errorData.detail || "Check credentials.");
+        // The backend now sends JSON on success (200 OK) and failure (4xx).
+        const data = await response.json();
+
+        if (response.ok) {
+          // SUCCESS: The backend sent us the user_id.
+          // We now construct the frontend URL and navigate there.
+          window.location.href = `/user/${data.user_id}/threads`;
         } else {
-          const errorText = await response.text();
-          messageBox.textContent = "Unexpected response (" + response.status + "): " + errorText;
+          // FAILURE: The backend sent an error message.
+          messageBox.textContent = data.detail || "An unknown error occurred.";
         }
+
       } catch (err) {
-        messageBox.textContent = "Error: Could not connect to server. Check your connection.";
+        messageBox.textContent = "Error: Could not connect to the server.";
+        console.error("Network or server error:", err);
       }
     });
   }
 
-  // === THREADS PAGE ===
+  // === THREADS PAGE LOGIC ===
   if (pathname.includes("/user/") && pathname.includes("/threads")) {
     const userIdMatch = pathname.match(/\/user\/(\d+)\/threads/);
     const userId = userIdMatch ? userIdMatch[1] : null;
 
     if (userId) {
-      fetch(`https://places-backend-o8ym.onrender.com/threads/user/${userId}`)
-        .then((res) => res.json())
+      // FIX: Corrected the API endpoint to match the backend route.
+      fetch(`${backendUrl}/threads/user/${userId}`)
+        .then((res) => {
+            if (!res.ok) {
+                throw new Error(`Server responded with status: ${res.status}`);
+            }
+            return res.json();
+        })
         .then((threads) => {
-          const container = document.getElementById("thread-list");
-          if (!container) return;
+          const threadsList = document.getElementById("threads-list");
+          if (!threadsList) return;
 
-          if (threads.length === 0) {
-            container.innerHTML = "<p>No threads yet.</p>";
+          if (!threads || threads.length === 0) {
+            threadsList.innerHTML = "<p>You have no chat threads. Start a new one!</p>";
             return;
           }
 
-          container.innerHTML = "";
+          threadsList.innerHTML = ""; // Clear any loading text
           threads.forEach((thread) => {
             const item = document.createElement("div");
-            item.className = "thread-item";
+            item.className = "thread-box"; // Using a class from your CSS
+            // Note: This link still points to the backend. A future improvement
+            // would be to make this a frontend route like `/thread/${thread.id}`.
             item.innerHTML = `
-              <a href="https://places-backend-o8ym.onrender.com/thread/${thread.id}">
-                ${thread.title || "Untitled Thread"} – ${new Date(thread.created_at).toLocaleString()}
+              <a href="${backendUrl}/thread/${thread.id}">
+                ${thread.title || "Untitled Thread"}
               </a>
+              <p>Created: ${new Date(thread.created_at).toLocaleString()}</p>
             `;
-            container.appendChild(item);
+            threadsList.appendChild(item);
           });
         })
         .catch((err) => {
-          const container = document.getElementById("thread-list");
-          if (container) container.innerHTML = "<p>Error loading threads.</p>";
+          const threadsList = document.getElementById("threads-list");
+          if (threadsList) {
+            threadsList.innerHTML = "<p style='color: red;'>Error: Could not load your threads.</p>";
+          }
+          console.error("Error loading threads:", err);
         });
     }
   }
