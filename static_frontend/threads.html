@@ -4,22 +4,29 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Your Threads – Places in Time</title>
-  <link rel="stylesheet" href="/style.css" />
+  <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body class="threads-page">
   <div class="threads-container">
-    <img src="/logo.png" alt="Places in Time Logo" class="logo" />
+    <img src="/static/logo.png" alt="Places in Time Logo" class="logo" />
 
     <main class="form-box">
-      <h1>Ongoing Conversations</h1>
-      <p>Threads are ongoing conversations with our historical guides. You can view past threads or start a new one. Each thread keeps its own context so you can return to it any time.</p>
+      <h1>Your Chat Threads</h1>
+      <p>
+        Threads are ongoing conversations with our historical guides. You can view past threads or start a new one.
+        Each thread keeps its own context so you can return to it at any time.
+      </p>
+
+      <img src="/static/threads_visual.png" alt="Historical illustration" class="threads-image" />
 
       <div id="threads-list">
         <!-- Threads will be populated here -->
       </div>
+
+      <button id="new-thread-button" class="primary-button">Ask a Historical Figure</button>
     </main>
   </div>
 
-  <script src="/main.js"></script>
+  <script src="/static/main.js" defer></script>
 </body>
 </html>
