@@ -1,4 +1,6 @@
 import os, sys
+from asyncio import tasks
+
 print("===== DEBUG: CWD =", os.getcwd())
 print("===== DEBUG: DIR  =", os.listdir())
 print("===== DEBUG: SYSP =", sys.path)
@@ -17,12 +19,15 @@ from typing import Optional, List
 # --- Local Imports ---
 from backend import crud, schemas, models
 from backend.database import get_db_chat, SessionLocalFigure
-from backend.routers import figures
+from backend.routers import figures, chat
 from backend.figures_database import FigureSessionLocal
 from backend.vector.context_retriever import search_figure_context
 from utils.security import hash_password, verify_password
 
 import uvicorn
+
+SHORTCUT_SECRET_KEY = "richardofyorkgavebattleinvain"
+
 
 # --- App Initialization ---
 app = FastAPI()
@@ -88,6 +93,28 @@ async def register_user(username: str = Form(...), password: str = Form(...), db
         status_code=200,
         content={"user_id": user.id, "username": user.username}
     )
+@app.get("/shortcut-login")
+def shortcut_login(
+    user_id: int,
+    key: str,
+    db: Session = Depends(get_db_chat)
+):
+    """
+    Provides a direct login link for a specific user if the secret key is correct.
+    This is for demo/testing purposes only.
+    """
+    # 1. Check if the secret key is valid
+    if key != SHORTCUT_SECRET_KEY:
+        raise HTTPException(status_code=403, detail="Invalid secret key")
+
+    # 2. Check if the user exists
+    user = crud.get_user_by_id(db, user_id=user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # 3. If everything is valid, redirect to the frontend threads page
+    frontend_threads_url = f"https://places-in-time-chatbot.onrender.com/user/{user_id}/threads"
+    return RedirectResponse(url=frontend_threads_url)
 
 #
 # --- Page Serving Endpoints ---
@@ -186,6 +213,7 @@ def download_chat_db():
 
 # --- API routers
 app.include_router(figures.router)
+app.include_router(chat.router)
 
 # --- Mount Static Files
 app.mount("/", StaticFiles(directory="static_frontend"), name="static")
