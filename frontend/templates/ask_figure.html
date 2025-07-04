@@ -5,11 +5,23 @@
     <title>Ask {{ figure.name }} – Places in Time</title>
     <link rel="stylesheet" href="/style.css" />
 </head>
-<body class="threads-page"> <div class="threads-container"> <img src="/logo.png" alt="Places in Time Logo" class="logo" />
+<body class="threads-page">
+<div class="threads-container">
+    <img src="/logo.png" alt="Places in Time Logo" class="logo" />
 
     <main class="form-box">
-        <h1>Chat with {{ figure.name }}</h1>
-        <p>{{ figure.short_summary | default('No summary available.') }}</p>
+        <div class="figure-header">
+            {% if figure.image_url %}
+            <div class="figure-image-container">
+                <img src="{{ figure.image_url }}" alt="Portrait of {{ figure.name }}" class="figure-image">
+            </div>
+            {% endif %}
+            <div class="figure-text-container">
+                <h1>Chat with {{ figure.name }}</h1>
+                <p>{{ figure.short_summary | default('No summary available.') }}</p>
+            </div>
+        </div>
+
 
         {% if messages %}
         <div class="messages-container">

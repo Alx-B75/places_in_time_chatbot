@@ -289,3 +289,40 @@ form input[type="password"] {
 .secondary-button:hover {
     background-color: #f5f7f8;
 }
+/* --- Figure Header Styles --- */
+
+.figure-header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #eee;
+}
+
+.figure-image-container {
+  flex-shrink: 0;
+}
+
+.figure-image {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%; /* Makes the image circular */
+  object-fit: cover; /* Prevents the image from being stretched */
+  border: 3px solid #e9ecef;
+}
+
+.figure-text-container {
+  flex-grow: 1;
+}
+
+.figure-text-container h1,
+.figure-text-container p {
+  margin: 0;
+  text-align: left;
+}
+
+.figure-text-container h1 {
+  margin-bottom: 0.5rem;
+}
