@@ -1,14 +1,23 @@
 document.addEventListener("DOMContentLoaded", () => {
+    // This function automatically selects the correct backend URL
+    const getBackendUrl = () => {
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            // We are on the local machine for testing
+            return 'http://localhost:8000';
+        }
+        // We are on the live site
+        return 'https://places-backend-o8ym.onrender.com';
+    };
+
+    const backendUrl = getBackendUrl();
     const pathname = window.location.pathname;
-    const backendUrl = "https://places-backend-o8ym.onrender.com";
 
     // === LOGIN + REGISTER LOGIC (on index.html) ===
     const authForm = document.getElementById("auth-form");
-    const toggleLink = document.getElementById("toggle-auth");
-    const formTitle = document.getElementById("form-title");
-    const messageBox = document.getElementById("message");
-
     if (authForm) {
+        const toggleLink = document.getElementById("toggle-auth");
+        const formTitle = document.getElementById("form-title");
+        const messageBox = document.getElementById("message");
         let isLogin = true;
 
         toggleLink.addEventListener("click", (e) => {
@@ -23,7 +32,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         authForm.addEventListener("submit", async (e) => {
-            e.preventDefault(); // This is the line that fails to run when there's a syntax error
+            e.preventDefault();
             const username = authForm.username.value;
             const password = authForm.password.value;
             const endpoint = isLogin ? "login" : "register";
@@ -42,7 +51,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 const data = await response.json();
 
                 if (response.ok) {
-                    window.location.href = `/user/${data.user_id}/threads`;
+                    if (data.access_token) {
+                        // Save the token to the browser's local storage
+                        localStorage.setItem("placesInTimeToken", data.access_token);
+                        // Use the user_id from the response to redirect
+                        window.location.href = `/user/${data.user_id}/threads`;
+                    } else {
+                         // Handle a successful registration
+                         alert("Registration successful! Please log in.");
+                         window.location.reload();
+                    }
                 } else {
                     messageBox.textContent = data.detail || "An unknown error occurred.";
                 }
@@ -59,7 +77,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const userId = userIdMatch ? userIdMatch[1] : null;
 
         if (userId) {
-            // Event listener for the "New Thread" button
             const newThreadButton = document.getElementById("new-thread-button");
             if (newThreadButton) {
                 newThreadButton.addEventListener("click", () => {
@@ -67,39 +84,58 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
             }
 
-            // Fetch and display existing threads
-            fetch(`${backendUrl}/threads/user/${userId}`)
-                .then((res) => {
-                    if (!res.ok) throw new Error(`Server responded with status: ${res.status}`);
-                    return res.json();
-                })
-                .then((threads) => {
-                    const threadsList = document.getElementById("threads-list");
-                    if (!threadsList) return;
+            const token = localStorage.getItem("placesInTimeToken");
+            const threadsList = document.getElementById("threads-list");
 
-                    if (!threads || threads.length === 0) {
-                        threadsList.innerHTML = "<p>You have no chat threads. Start a new one!</p>";
-                        return;
-                    }
+            if (!token) {
+                threadsList.innerHTML = "<p>You are not logged in. Redirecting...</p>";
+                window.location.href = "/";
+                return;
+            }
 
-                    threadsList.innerHTML = "";
-                    threads.forEach((thread) => {
-                        const item = document.createElement("div");
-                        item.className = "thread-box";
-                        item.innerHTML = `
-                            <a href="${backendUrl}/thread/${thread.id}">${thread.title || "Untitled Thread"}</a>
-                            <p>Created: ${new Date(thread.created_at).toLocaleString()}</p>
-                        `;
-                        threadsList.appendChild(item);
-                    });
-                })
-                .catch((err) => {
-                    const threadsList = document.getElementById("threads-list");
+            // Fetch threads using the Authorization header
+            fetch(`${backendUrl}/threads/user/${userId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then((res) => {
+                if (res.status === 401) {
+                    localStorage.removeItem("placesInTimeToken");
+                    window.location.href = "/";
+                    throw new Error("Unauthorized");
+                }
+                if (!res.ok) throw new Error(`Server responded with status: ${res.status}`);
+                return res.json();
+            })
+            .then((threads) => {
+                if (!threadsList) return;
+
+                if (!threads || threads.length === 0) {
+                    threadsList.innerHTML = "<p>You have no chat threads. Start a new one!</p>";
+                    return;
+                }
+
+                threadsList.innerHTML = "";
+                threads.forEach((thread) => {
+                    const item = document.createElement("div");
+                    item.className = "thread-box";
+                    // This now correctly points to the backend
+                    item.innerHTML = `
+                        <a href="${backendUrl}/thread/${thread.id}">${thread.title || "Untitled Thread"}</a>
+                        <p>Created: ${new Date(thread.created_at).toLocaleString()}</p>
+                    `;
+                    threadsList.appendChild(item);
+                });
+            })
+            .catch((err) => {
+                if (err.message !== "Unauthorized") {
                     if (threadsList) {
                         threadsList.innerHTML = "<p style='color: red;'>Error: Could not load your threads.</p>";
                     }
                     console.error("Error loading threads:", err);
-                });
+                }
+            });
         }
     }
 });

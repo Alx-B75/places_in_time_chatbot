@@ -42,8 +42,6 @@ class Chat(Base):
     summary_parent = relationship("Chat", remote_side=[id], lazy="joined")
 
 
-
-
 class User(Base):
     """
     Represents a user who can submit chats.

@@ -12,3 +12,6 @@ pandas~=2.3.0
 python-multipart
 bcrypt~=4.3.0
 passlib[bcrypt]
+python-jose[cryptography]
+sentence-transformers
+python-multipart

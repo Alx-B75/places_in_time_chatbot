@@ -1,3 +1,5 @@
+# backend/init_db.py
+
 import os
 import sys
 import csv
@@ -8,11 +10,9 @@ project_root_dir = os.path.dirname(current_dir)
 if project_root_dir not in sys.path:
     sys.path.insert(0, project_root_dir)
 
-from backend.database import (
-    engine,
-    engine_figure,
-    SessionLocalFigure,
-)
+# UPDATED: Imports are now separated to pull from the correct files
+from backend.database import engine
+from backend.figures_database import engine_figure, FigureSessionLocal
 from backend.models import Base, FigureBase, HistoricalFigure, FigureContext
 from tools.load_context_to_chroma import load_context_to_chroma
 
@@ -27,7 +27,7 @@ def seed_figures():
         print(f"⚠️ CSV file not found: {DATA_FILE}")
         return
 
-    session = SessionLocalFigure()
+    session = FigureSessionLocal()
     try:
         if session.query(HistoricalFigure).first():
             print("ℹ️ historical_figures table already populated. Skipping seeding.")
@@ -70,13 +70,20 @@ def populate_figure_context_from_bio():
     Create a default FigureContext entry for each HistoricalFigure
     using the long_bio as context.
     """
-    session = SessionLocalFigure()
+    session = FigureSessionLocal()
     try:
         figures = session.query(HistoricalFigure).all()
         count = 0
         for figure in figures:
-            if not figure.long_bio:
+            # Check if context for this bio already exists
+            existing_context = session.query(FigureContext).filter_by(
+                figure_slug=figure.slug,
+                source_name="bio_csv"
+            ).first()
+
+            if not figure.long_bio or existing_context:
                 continue
+
             context = FigureContext(
                 figure_slug=figure.slug,
                 source_name="bio_csv",
@@ -87,8 +94,13 @@ def populate_figure_context_from_bio():
             )
             session.add(context)
             count += 1
-        session.commit()
-        print(f"✅ Populated {count} figure contexts from long_bio.")
+
+        if count > 0:
+            session.commit()
+            print(f"✅ Populated {count} new figure contexts from long_bio.")
+        else:
+            print("ℹ️ No new contexts to populate from long_bio.")
+
     finally:
         session.close()
 
@@ -98,19 +110,23 @@ def init_db():
     Creates all tables defined in the SQLAlchemy models for both databases,
     seeds figures from CSV, populates figure context, and loads vectors into Chroma.
     """
-    print("📂 Current working directory:", os.getcwd())
-    print("📄 Target CHAT DB path:", os.path.abspath("./data/chat_history.db"))
-    print("📄 Target FIGURE DB path:", os.path.abspath("./data/figures.db"))
+    print("--- Initializing Databases ---")
 
+    # Create tables for the chat history database
     Base.metadata.create_all(bind=engine)
-    print("✅ Initial chat history database tables created.")
+    print("✅ Chat history database tables created.")
 
+    # Create tables for the figures database
     FigureBase.metadata.create_all(bind=engine_figure)
-    print("✅ Initial historical figures database tables created.")
+    print("✅ Historical figures database tables created.")
 
+    # Seed data into the databases
     seed_figures()
     populate_figure_context_from_bio()
+
+    # Load data into the vector store
     load_context_to_chroma()
+    print("--- Database Initialization Complete ---")
 
 
 if __name__ == "__main__":

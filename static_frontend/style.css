@@ -326,3 +326,27 @@ form input[type="password"] {
 .figure-text-container h1 {
   margin-bottom: 0.5rem;
 }
+/* --- Thread Actions & Delete Button --- */
+
+.thread-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1.5rem;
+  border-top: 1px solid #eee;
+  padding-top: 1.5rem;
+}
+
+.delete-button {
+  background-color: #c82333;
+  color: white;
+  padding: 0.5rem 1rem;
+  border: 1px solid #c82333;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.delete-button:hover {
+  background-color: #a81c29;
+}

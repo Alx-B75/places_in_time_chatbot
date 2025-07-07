@@ -1,28 +1,23 @@
-import os
-from openai import OpenAI
+# backend/vector/embedding_provider.py
 
-USE_OPENAI = os.getenv("USE_OPENAI_EMBEDDING", "false").lower() == "true"
+from sentence_transformers import SentenceTransformer
+from typing import List
 
-if USE_OPENAI:
-    import openai
-    client = OpenAI(api_key = os.getenv("OPENAI_API_KEY"))
 
-    def get_embedding(text: str) -> list[float]:
-        """
-        Get embedding from OpenAI API.
-        """
-        response = client.embeddings.create(
-            model="text-embedding-3-small",
-            input=text
-        )
-        return response.data[0].embedding
+MODEL_NAME = "all-MiniLM-L6-v2"
 
-else:
-    from sentence_transformers import SentenceTransformer
-    _model = SentenceTransformer("all-MiniLM-L6-v2")
+print(f"Loading embedding model: {MODEL_NAME}")
+model = SentenceTransformer(MODEL_NAME)
+print("Embedding model loaded successfully.")
 
-    def get_embedding(text: str) -> list[float]:
-        """
-        Get embedding from local SentenceTransformer model.
-        """
-        return _model.encode(text).tolist()
+
+def get_embedding(text: str) -> List[float]:
+    """
+    Generates an embedding for a single piece of text.
+    """
+    if not text or not isinstance(text, str):
+        return [0.0] * model.get_sentence_embedding_dimension()
+
+    embedding = model.encode(text, convert_to_tensor=False)
+
+    return embedding.tolist()
