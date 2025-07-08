@@ -15,6 +15,8 @@ client = chromadb.PersistentClient(path=CHROMA_DATA_PATH)
 def get_figure_context_collection():
     """
     Returns the singleton instance of the ChromaDB collection for figure context.
+    It will create the collection if it doesn't already exist.
     """
-    collection = client.get_collection(name=COLLECTION_NAME)
+    # This now creates the collection if it's missing, preventing the crash.
+    collection = client.get_or_create_collection(name=COLLECTION_NAME)
     return collection

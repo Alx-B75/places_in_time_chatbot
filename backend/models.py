@@ -1,5 +1,5 @@
 import json
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, func
 from sqlalchemy.orm import relationship
 from datetime import datetime
 
@@ -35,7 +35,7 @@ class Chat(Base):
     source_page = Column(String, nullable=True)
     thread_id = Column(Integer, ForeignKey("threads.id"), nullable=True)
     summary_of = Column(Integer, ForeignKey("chats.id"), nullable=True)
-    timestamp = Column(DateTime, default=datetime.utcnow)
+    timestamp = Column(DateTime(timezone=True), server_default=func.now())
 
     user = relationship("User", back_populates="chats")
     thread = relationship("Thread", back_populates="chats", lazy="joined")
@@ -65,8 +65,8 @@ class Thread(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     title = Column(String, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    figure_slug = Column(String, nullable=True)  # Can be null for general threads
     user = relationship("User", back_populates="threads")
 
     chats = relationship("Chat", back_populates="thread", cascade="all, delete-orphan")

@@ -350,3 +350,72 @@ form input[type="password"] {
 .delete-button:hover {
   background-color: #a81c29;
 }
+/* --- UI Polish and Enhancements --- */
+
+/* 1. Change image from circle to a rounded square */
+.figure-image {
+  border-radius: 12px; /* Was 50% */
+}
+
+/* 2. Improve the chat input box style */
+.chat-form {
+  display: block; /* Change from flex to block for centering */
+  text-align: center; /* Center the contents */
+}
+
+.chat-form textarea {
+  width: 100%;
+  margin-bottom: 0.75rem;
+  border-radius: 8px;
+  background-color: #f5f7f8;
+  border: 1px solid #dddfe2;
+  font-family: inherit; /* Use the same font as the rest of the page */
+  font-size: 1rem;
+  padding: 0.8rem 1rem;
+  min-height: 60px; /* Make the box a bit larger */
+}
+
+/* 3. Center the Send button (by making it part of the block layout) */
+.chat-form button {
+  height: auto; /* Reset height */
+  width: auto;
+  padding: 0.75rem 2rem; /* Add more horizontal padding */
+}
+
+/* 4. Style the Back to Threads button */
+.secondary-button {
+  border: 1px solid #d1d5db; /* Lighter grey border */
+  color: #374151; /* Darker grey text */
+  background-color: #ffffff; /* White background */
+}
+
+.secondary-button:hover {
+  background-color: #f9fafb; /* Slightly off-white on hover */
+}
+/* --- Custom Select Dropdown Styling --- */
+
+.form-box select {
+  /* Sizing & Spacing */
+  width: 100%;
+  padding: 0.8rem 1rem;
+  margin-top: 0.5rem; /* Space below the label */
+
+  /* Font & Appearance */
+  font-size: 1rem;
+  font-family: inherit;
+  color: #1c1e21;
+  background-color: #f5f7f8;
+  border: 1px solid #dddfe2;
+  border-radius: 8px;
+
+  /* Remove default OS appearance */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+
+  /* Add a custom dropdown arrow using an embedded SVG */
+  background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="%23606770"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>');
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1.25em 1.25em;
+}

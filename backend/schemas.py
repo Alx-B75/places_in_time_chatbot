@@ -111,6 +111,7 @@ class ThreadCreate(BaseModel):
     """
     user_id: int
     title: Optional[str] = None
+    figure_slug: Optional[str] = None
 
 
 class ThreadRead(ThreadCreate):

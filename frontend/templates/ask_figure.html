@@ -22,19 +22,18 @@
             </div>
         </div>
 
-
-        {% if messages %}
         <div class="messages-container">
-            {% for msg in messages %}
-                <div class="message-wrapper {{ 'user-message' if msg.role == 'user' else 'assistant-message' }}">
-                    <div class="message-bubble">
-                        <span class="message-role">{{ msg.role.title() }}</span>
-                        <p class="message-content">{{ msg.message }}</p>
+            {% if messages %}
+                {% for msg in messages %}
+                    <div class="message-wrapper {{ 'user-message' if msg.role == 'user' else 'assistant-message' }}">
+                        <div class="message-bubble">
+                            <span class="message-role">{% if msg.role == 'user' %}Your Question{% else %}{{ figure.name }}{% endif %}</span>
+                            <p class="message-content">{{ msg.message }}</p>
+                        </div>
                     </div>
-                </div>
-            {% endfor %}
+                {% endfor %}
+            {% endif %}
         </div>
-        {% endif %}
 
         <form action="/figures/ask" method="post" class="chat-form">
             <input type="hidden" name="user_id" value="{{ user_id_value }}" />
@@ -42,7 +41,6 @@
             {% if thread %}
               <input type="hidden" name="thread_id" value="{{ thread.id }}" />
             {% endif %}
-
             <textarea name="message" placeholder="Ask your question..." rows="3" required></textarea>
             <button type="submit" id="submit-button">Send</button>
         </form>

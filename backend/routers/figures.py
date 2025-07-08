@@ -75,7 +75,7 @@ def get_ask_figure_page(
     })
 
 
-# The rest of the file is unchanged...
+
 @router.post("/ask", response_class=HTMLResponse)
 async def ask_figure_submit(
         request: Request,
@@ -97,7 +97,11 @@ async def ask_figure_submit(
         if not thread:
             raise HTTPException(status_code=404, detail="Thread not found")
     else:
-        thread_data = schemas.ThreadCreate(user_id=user_id, title=f"Chat with {figure.name}")
+        thread_data = schemas.ThreadCreate(
+            user_id=user_id,
+            title=f"Chat with {figure.name}",
+            figure_slug=figure.slug
+        )
         thread = crud.create_thread(db, thread=thread_data)
         thread_id = thread.id
 

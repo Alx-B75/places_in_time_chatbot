@@ -11,14 +11,28 @@
     <img src="/logo.png" alt="Places in Time Logo" class="logo" />
 
     <main class="form-box">
-        <h1>{{ thread.title or "Chat Thread" }}</h1>
+        {% if figure %}
+            <div class="figure-header">
+                {% if figure.image_url %}
+                <div class="figure-image-container">
+                    <img src="{{ figure.image_url }}" alt="Portrait of {{ figure.name }}" class="figure-image">
+                </div>
+                {% endif %}
+                <div class="figure-text-container">
+                    <h1>{{ thread.title }}</h1>
+                    <p>{{ figure.short_summary | default('No summary available.') }}</p>
+                </div>
+            </div>
+        {% else %}
+            <h1>{{ thread.title or "Chat Thread" }}</h1>
+        {% endif %}
 
         <div class="messages-container">
             {% if messages %}
                 {% for msg in messages %}
                     <div class="message-wrapper {{ 'user-message' if msg.role == 'user' else 'assistant-message' }}">
                         <div class="message-bubble">
-                            <span class="message-role">{{ "You" if msg.role == "user" else "Historical Guide" }}</span>
+                             <span class="message-role">{% if msg.role == 'user' %}Your Question{% else %}{{ figure.name or 'Historical Guide' }}{% endif %}</span>
                             <p class="message-content">{{ msg.message }}</p>
                         </div>
                     </div>
@@ -37,13 +51,11 @@
 
         <div class="thread-actions">
             <a href="/user/{{ user_id }}/threads" class="secondary-button">← Back to All Threads</a>
-
             <form action="/thread/{{ thread_id }}/delete" method="post" onsubmit="return confirm('Are you sure you want to permanently delete this thread?');">
                 <button type="submit" class="delete-button">Delete Thread</button>
             </form>
         </div>
     </main>
 </div>
-
 </body>
 </html>

@@ -15,6 +15,7 @@ from datetime import timedelta
 
 # Local Imports
 from backend import crud, schemas, models
+from backend.figures_database import FigureSessionLocal
 from backend.database import get_db_chat
 from backend.templating import templates
 from utils.security import (
@@ -94,12 +95,25 @@ def get_user_threads_page(user_id: int):
     return FileResponse(path, media_type="text/html")
 
 
+# In backend/main.py
+
 @app.get("/thread/{thread_id}", response_class=HTMLResponse)
 def view_thread(thread_id: int, request: Request, db: Session = Depends(get_db_chat)):
     thread = crud.get_thread_by_id(db, thread_id)
     if not thread:
         raise HTTPException(status_code=404, detail="Thread not found")
+
+    figure = None
+    if thread.figure_slug:
+        # If the thread is linked to a figure, fetch the figure's details
+        fig_db = FigureSessionLocal()
+        try:
+            figure = crud.get_figure_by_slug(fig_db, slug=thread.figure_slug)
+        finally:
+            fig_db.close()
+
     messages = crud.get_messages_by_thread(db, thread_id)
+
     return templates.TemplateResponse(
         "thread.html",
         {
@@ -108,6 +122,7 @@ def view_thread(thread_id: int, request: Request, db: Session = Depends(get_db_c
             "messages": messages,
             "user_id": thread.user_id,
             "thread_id": thread.id,
+            "figure": figure,  # Pass the figure object to the template
         },
     )
 

@@ -117,13 +117,15 @@ def get_messages_by_user(db: Session, user_id: int, limit: int = 50):
     )
 
 
-def create_thread(db: Session, thread: schemas.ThreadCreate):
+def create_thread(db: Session, thread: schemas.ThreadCreate) -> models.Thread:
     """
-    Create a new thread for a given user.
+    Create a new thread for a user.
     """
+    # This version correctly includes the figure_slug
     db_thread = models.Thread(
         user_id=thread.user_id,
-        title=thread.title
+        title=thread.title,
+        figure_slug=thread.figure_slug
     )
     db.add(db_thread)
     db.commit()
