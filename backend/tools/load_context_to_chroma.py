@@ -1,36 +1,63 @@
-import uuid
+import chromadb
+from chromadb.utils import embedding_functions
+import os
+import sys
+
+# --- Robust Path Calculation ---
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root_dir = os.path.dirname(current_dir)
+if project_root_dir not in sys.path:
+    sys.path.insert(0, project_root_dir)
+
+from backend.vector.embedding_provider import get_embedding
 from backend.figures_database import FigureSessionLocal
 from backend.models import FigureContext
-from backend.vector.chroma_client import get_figure_context_collection
-from backend.vector.embedding_provider import get_embedding
 
-
+# This now calculates an absolute path to the chroma_db folder
+CHROMA_DATA_PATH = os.path.join(project_root_dir, "data", "chroma_db")
+COLLECTION_NAME = "figure_context_collection"
 
 
 def load_context_to_chroma():
+    """
+    Loads historical figure context from the figures.db into ChromaDB.
+    """
+    print(f"Ensuring ChromaDB path exists at: {CHROMA_DATA_PATH}")
+    client = chromadb.PersistentClient(path=CHROMA_DATA_PATH)
+
+    collection = client.get_or_create_collection(name=COLLECTION_NAME)
+
     session = FigureSessionLocal()
-    collection = get_figure_context_collection()
+    try:
+        all_context = session.query(FigureContext).all()
+        if not all_context:
+            print("No context found in figures.db to load into ChromaDB.")
+            return
 
-    figure_contexts = session.query(FigureContext).all()
-    print(f"Found {len(figure_contexts)} context entries.")
+        print(f"Preparing {len(all_context)} documents for embedding...")
 
-    for fc in figure_contexts:
-        doc_id = f"{fc.figure_slug}-{fc.id}-{uuid.uuid4().hex[:6]}"
-        metadata = {
-            "figure_slug": fc.figure_slug,
-            "content_type": fc.content_type,
-            "source_name": fc.source_name or "",
-        }
+        documents = [context.content for context in all_context]
+        embeddings = [get_embedding(doc) for doc in documents]
 
+        metadatas = [{"figure_slug": context.figure_slug} for context in all_context]
+        ids = [str(context.id) for context in all_context]
+
+        if not ids:
+            print("No documents to add to ChromaDB.")
+            return
+
+        print(f"Adding {len(ids)} documents to ChromaDB collection...")
         collection.add(
-            ids=[doc_id],
-            documents=[fc.content],
-            embeddings=[get_embedding(fc.content)],
-            metadatas=[metadata],
+            embeddings=embeddings,
+            documents=documents,
+            metadatas=metadatas,
+            ids=ids
         )
+        print("✅ ChromaDB loading complete.")
 
-    print("Context data loaded into Chroma.")
+    finally:
+        session.close()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     load_context_to_chroma()
