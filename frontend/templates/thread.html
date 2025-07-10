@@ -50,7 +50,7 @@
         </form>
 
         <div class="thread-actions">
-            <a href="/user/{{ user_id }}/threads" class="secondary-button">← Back to All Threads</a>
+            <a href="https://places-in-time-chatbot.onrender.com/user/{{ user_id }}/threads" class="secondary-button">← Back to All Threads</a>
             <form action="/thread/{{ thread_id }}/delete" method="post" onsubmit="return confirm('Are you sure you want to permanently delete this thread?');">
                 <button type="submit" class="delete-button">Delete Thread</button>
             </form>
