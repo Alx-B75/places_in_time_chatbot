@@ -1,37 +1,8 @@
 services:
   - type: web
-    name: places-backend-o8ym
-    env: python
-    plan: starter
-    buildCommand: "pip install -r requirements.txt"
-    # UPDATED: The two commands from start.sh are now here, joined by &&
-    startCommand: "python backend/init_db.py && uvicorn backend.main:app --host 0.0.0.0 --port 10000"
-    envVars:
-      - key: PYTHON_VERSION
-        value: 3.13.0
-      - key: DATABASE_URL
-        fromDatabase:
-          name: places-in-time-db
-          property: connectionString
-      - key: OPENAI_API_KEY
-        sync: false
-      - key: SECRET_KEY
-        sync: false
-      - key: USE_OPENAI_EMBEDDING
-        sync: false
-    databases:
-      - name: places-in-time-db
-        databaseName: places_in_time
-        user: alxbunting
-    disks:
-      - name: data
-        mountPath: /data
-        sizeGB: 1
-
-  - type: web
     name: places-in-time-chatbot
     env: static
-    plan: free
+    plan: starter
     buildCommand: "echo 'No build command needed for static site'"
     staticPublishPath: "./static_frontend"
     routes:
