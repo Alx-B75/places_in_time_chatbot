@@ -1,11 +1,15 @@
 import chromadb
 import os
 
+# -- Commented to enable render path
 # --- Robust Path Calculation ---
-current_dir = os.path.dirname(os.path.abspath(__file__))
+"""current_dir = os.path.dirname(os.path.abspath(__file__))
 # Navigate up two levels from chroma_client.py -> vector -> backend -> project_root
 project_root_dir = os.path.dirname(os.path.dirname(current_dir))
-CHROMA_DATA_PATH = os.path.join(project_root_dir, "data", "chroma_db")
+CHROMA_DATA_PATH = os.path.join(project_root_dir, "data", "chroma_db")"""
+
+#Render path
+CHROMA_DATA_PATH = "/data/chroma_db"
 
 COLLECTION_NAME = "figure_context_collection"
 

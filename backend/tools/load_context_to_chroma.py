@@ -1,9 +1,8 @@
 import chromadb
-from chromadb.utils import embedding_functions
 import os
 import sys
 
-# --- Robust Path Calculation ---
+# --- Path Calculation for Project Imports ---
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root_dir = os.path.dirname(current_dir)
 if project_root_dir not in sys.path:
@@ -13,16 +12,15 @@ from backend.vector.embedding_provider import get_embedding
 from backend.figures_database import FigureSessionLocal
 from backend.models import FigureContext
 
-# This now calculates an absolute path to the chroma_db folder
-CHROMA_DATA_PATH = os.path.join(project_root_dir, "data", "chroma_db")
+# --- UPDATED: This now points directly to the Render Disk mount path ---
+CHROMA_DATA_PATH = "/data/chroma_db"
 COLLECTION_NAME = "figure_context_collection"
 
 
 def load_context_to_chroma():
     """
-    Loads historical figure context from the figures.db into ChromaDB.
+    Pre-calculates embeddings for all contexts and loads them into ChromaDB.
     """
-    print(f"Ensuring ChromaDB path exists at: {CHROMA_DATA_PATH}")
     client = chromadb.PersistentClient(path=CHROMA_DATA_PATH)
 
     collection = client.get_or_create_collection(name=COLLECTION_NAME)
@@ -46,7 +44,7 @@ def load_context_to_chroma():
             print("No documents to add to ChromaDB.")
             return
 
-        print(f"Adding {len(ids)} documents to ChromaDB collection...")
+        print(f"Adding {len(ids)} documents with pre-calculated embeddings to ChromaDB...")
         collection.add(
             embeddings=embeddings,
             documents=documents,
