@@ -144,6 +144,10 @@ form input[type="password"] {
   font-weight: bold;
   color: #005a71;
   text-decoration: none;
+  }
+  .thread-box {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 /* --- Threads Page Enhancements --- */
 
@@ -386,7 +390,7 @@ form input[type="password"] {
 .secondary-button {
   border: 1px solid #d1d5db; /* Lighter grey border */
   color: #374151; /* Darker grey text */
-  background-color: #ffffff; /* White background */
+  background-color: #eb9534; /* Orange background */
 }
 
 .secondary-button:hover {
