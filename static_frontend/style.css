@@ -419,3 +419,23 @@ form input[type="password"] {
   background-position: right 0.75rem center;
   background-size: 1.25em 1.25em;
 }
+/* --- Final UI Polish --- */
+
+/* New style for the "Back to Threads" button */
+.secondary-button {
+  background-color: #e9ecef; /* Light grey background */
+  color: #495057; /* Dark grey text */
+  border: 1px solid #dee2e6; /* Matching border */
+}
+
+.secondary-button:hover {
+  background-color: #f8f9fa; /* Even lighter on hover */
+}
+
+/* Style for the "is thinking..." indicator */
+#thinking-indicator {
+    text-align: center;
+    padding: 1rem;
+    color: #606770;
+    font-style: italic;
+}

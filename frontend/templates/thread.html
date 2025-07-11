@@ -27,12 +27,12 @@
             <h1>{{ thread.title or "Chat Thread" }}</h1>
         {% endif %}
 
-        <div class="messages-container">
+        <div class="messages-container" id="messages-container">
             {% if messages %}
                 {% for msg in messages %}
                     <div class="message-wrapper {{ 'user-message' if msg.role == 'user' else 'assistant-message' }}">
                         <div class="message-bubble">
-                             <span class="message-role">{% if msg.role == 'user' %}Your Question{% else %}{{ figure.name or 'Historical Guide' }}{% endif %}</span>
+                            <span class="message-role">{% if msg.role == 'user' %}Your Question{% else %}{{ figure.name or 'Historical Guide' }}{% endif %}</span>
                             <p class="message-content">{{ msg.message }}</p>
                         </div>
                     </div>
@@ -42,20 +42,24 @@
             {% endif %}
         </div>
 
-        <form method="POST" action="/chat/complete" class="chat-form">
-            <input type="hidden" name="user_id" value="{{ user_id }}">
-            <input type="hidden" name="thread_id" value="{{ thread_id }}">
-            <textarea name="message" placeholder="Ask a follow-up question..." rows="3" required></textarea>
+        <form id="chat-form" class="chat-form">
+            <input type="hidden" id="user_id" value="{{ user_id }}">
+            <input type="hidden" id="figure_slug" value="{{ figure.slug if figure else '' }}" />
+            <input type="hidden" id="thread_id" value="{{ thread_id }}">
+            <textarea name="message" id="message-input" placeholder="Ask a follow-up question..." rows="3" required></textarea>
             <button type="submit" id="submit-button">Send</button>
         </form>
 
+        <div id="thinking-indicator" style="display: none;"></div>
+
         <div class="thread-actions">
             <a href="https://places-in-time-chatbot.onrender.com/user/{{ user_id }}/threads" class="secondary-button">← Back to All Threads</a>
-            <form action="/thread/{{ thread_id }}/delete" method="post" onsubmit="return confirm('Are you sure you want to permanently delete this thread?');">
+            <form action="{{ backend_url }}/thread/{{ thread_id }}/delete" method="post" onsubmit="return confirm('Are you sure you want to permanently delete this thread?');">
                 <button type="submit" class="delete-button">Delete Thread</button>
             </form>
         </div>
     </main>
 </div>
+<script src="/main.js"></script>
 </body>
 </html>

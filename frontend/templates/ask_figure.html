@@ -22,7 +22,7 @@
             </div>
         </div>
 
-        <div class="messages-container">
+        <div class="messages-container" id="messages-container">
             {% if messages %}
                 {% for msg in messages %}
                     <div class="message-wrapper {{ 'user-message' if msg.role == 'user' else 'assistant-message' }}">
@@ -35,18 +35,19 @@
             {% endif %}
         </div>
 
-        <form action="/figures/ask" method="post" class="chat-form">
-            <input type="hidden" name="user_id" value="{{ user_id_value }}" />
-            <input type="hidden" name="figure_slug" value="{{ figure.slug }}" />
-            {% if thread %}
-              <input type="hidden" name="thread_id" value="{{ thread.id }}" />
-            {% endif %}
-            <textarea name="message" placeholder="Ask your question..." rows="3" required></textarea>
+        <form id="chat-form" class="chat-form">
+            <input type="hidden" id="user_id" value="{{ user_id_value }}" />
+            <input type="hidden" id="figure_slug" value="{{ figure.slug }}" />
+            <input type="hidden" id="thread_id" value="{{ thread.id if thread else '' }}" />
+            <textarea name="message" id="message-input" placeholder="Ask your question..." rows="3" required></textarea>
             <button type="submit" id="submit-button">Send</button>
         </form>
+
+        <div id="thinking-indicator" style="display: none;"></div>
 
         <a href="https://places-in-time-chatbot.onrender.com/user/{{ user_id_value }}/threads" class="secondary-button">← Back to All Threads</a>
     </main>
 </div>
+<script src="/main.js"></script>
 </body>
 </html>
