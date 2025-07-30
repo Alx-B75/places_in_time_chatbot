@@ -156,6 +156,7 @@ document.addEventListener("DOMContentLoaded", () => {
             appendMessageToChat('user', 'Your Question', messageText);
             messageInput.value = "";
 
+
             try {
                 const response = await fetch(`${backendUrl}/figures/ask`, {
                     method: 'POST',
