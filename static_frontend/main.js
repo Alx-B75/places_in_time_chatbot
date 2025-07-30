@@ -7,6 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return 'https://places-backend-o8ym.onrender.com';
     };
 
+
     const backendUrl = getBackendUrl();
     const pathname = window.location.pathname;
 
