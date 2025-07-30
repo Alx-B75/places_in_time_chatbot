@@ -157,7 +157,7 @@ document.addEventListener("DOMContentLoaded", () => {
             messageInput.value = "";
 
             try {
-                const response = await fetch(`${backendUrl}/ask`, {
+                const response = await fetch(`${backendUrl}/figures/ask`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
