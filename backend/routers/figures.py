@@ -11,6 +11,7 @@ from backend.database import get_db_chat
 from backend.figures_database import FigureSessionLocal
 from backend.vector.context_retriever import search_figure_context
 from pydantic import BaseModel
+from utils.security import get_current_user
 
 # --- Initialization ---
 router = APIRouter(
@@ -76,42 +77,49 @@ def get_ask_figure_page(
 
 
 
-@router.post("/ask", response_class=HTMLResponse)
+@router.post("/ask", response_model=ChatMessageRead)
 async def ask_figure_submit(
-        request: Request,
-        figure_slug: str = Form(...),
-        user_id: int = Form(...),
-        message: str = Form(...),
-        thread_id: Optional[int] = Form(None),
-        db: Session = Depends(get_db_chat)
+    request_data: AskRequest, # This now expects a JSON body
+    db: Session = Depends(get_db_chat),
+    current_user: models.User = Depends(get_current_user)
 ):
+    """
+    Handles a chat submission as a JSON API. It creates a thread if one
+    doesn't exist, gets a context-aware response from the AI, saves the
+    messages, and returns the assistant's final message as JSON.
+    """
+    # Security check
+    if current_user.id != request_data.user_id:
+        raise HTTPException(status_code=403, detail="User ID mismatch")
+
     fig_db = FigureSessionLocal()
-    figure = fig_db.query(models.HistoricalFigure).filter(models.HistoricalFigure.slug == figure_slug).first()
-    fig_db.close()
+    try:
+        figure = crud.get_figure_by_slug(fig_db, slug=request_data.figure_slug)
+        if not figure:
+            raise HTTPException(status_code=404, detail="Figure not found")
+    finally:
+        fig_db.close()
 
-    if not figure:
-        raise HTTPException(status_code=404, detail="Figure not found")
-
-    if thread_id:
-        thread = crud.get_thread_by_id(db, thread_id)
-        if not thread:
-            raise HTTPException(status_code=404, detail="Thread not found")
-    else:
-        thread_data = schemas.ThreadCreate(
-            user_id=user_id,
+    thread_id = request_data.thread_id
+    if not thread_id:
+        thread_schema = schemas.ThreadCreate(
+            user_id=request_data.user_id,
             title=f"Chat with {figure.name}",
-            figure_slug=figure.slug
+            figure_slug=request_data.figure_slug
         )
-        thread = crud.create_thread(db, thread=thread_data)
-        thread_id = thread.id
+        new_thread = crud.create_thread(db, thread_schema)
+        thread_id = new_thread.id
 
-    crud.create_chat_message(db, schemas.ChatMessageCreate(
-        user_id=user_id, role="user", message=message, thread_id=thread_id
-    ))
+    # Save the user's message
+    user_msg_schema = schemas.ChatMessageCreate(
+        user_id=request_data.user_id, role="user", message=request_data.message, thread_id=thread_id
+    )
+    crud.create_chat_message(db, user_msg_schema)
 
+    # --- Get AI Response (RAG process) ---
     system_prompt = figure.persona_prompt or "You are a helpful historical guide."
-    context_chunks = search_figure_context(query=message, figure_slug=figure_slug)
-    context_text = "\n\n".join([chunk["content"] for chunk in context_chunks]) if context_chunks else ""
+    context_chunks = search_figure_context(query=request_data.message, figure_slug=request_data.figure_slug)
+    context_text = "\n\n".join([chunk["content"] for chunk in context_chunks])
 
     all_messages = crud.get_messages_by_thread(db, thread_id)
     formatted_messages = [{"role": "system", "content": system_prompt}]
@@ -125,20 +133,13 @@ async def ask_figure_submit(
     )
     reply = response.choices[0].message.content
 
-    crud.create_chat_message(db, schemas.ChatMessageCreate(
-        user_id=user_id, role="assistant", message=reply, thread_id=thread_id
-    ))
+    # Save the assistant's message and return it as JSON
+    assistant_msg_schema = schemas.ChatMessageCreate(
+        user_id=request_data.user_id, role="assistant", message=reply, thread_id=thread_id
+    )
+    db_chat_message = crud.create_chat_message(db, assistant_msg_schema)
 
-    updated_messages = crud.get_messages_by_thread(db, thread_id)
-
-    return templates.TemplateResponse("ask_figure.html", {
-        "request": request,
-        "figure": figure,
-        "thread": thread,
-        "messages": updated_messages,
-        "user_id_value": user_id,
-        "context_text": context_text
-    })
+    return db_chat_message
 
 
 @router.get("/", response_model=List[schemas.HistoricalFigureRead])
