@@ -13,6 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // --- LOGIN & REGISTER LOGIC ---
     const authForm = document.getElementById("auth-form");
     if (authForm) {
+        // ... (This part of your code is correct and unchanged)
         const toggleLink = document.getElementById("toggle-auth");
         const formTitle = document.getElementById("form-title");
         const messageBox = document.getElementById("message");
@@ -68,6 +69,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // --- THREADS PAGE LOGIC ---
     if (pathname.includes("/user/") && pathname.includes("/threads")) {
+        // ... (This part of your code is correct and unchanged)
         const userIdMatch = pathname.match(/\/user\/(\d+)\/threads/);
         const userId = userIdMatch ? userIdMatch[1] : null;
 
@@ -157,11 +159,12 @@ document.addEventListener("DOMContentLoaded", () => {
             messageInput.value = "";
 
             try {
+                // UPDATED: This fetch call now includes the Authorization header
                 const response = await fetch(`${backendUrl}/figures/ask`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
+                        'Authorization': `Bearer ${token}` // <-- This line was added
                     },
                     body: JSON.stringify({
                         user_id: parseInt(userId), message: messageText, figure_slug: figureSlug,
