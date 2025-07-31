@@ -75,7 +75,6 @@ document.addEventListener("DOMContentLoaded", () => {
             const newThreadButton = document.getElementById("new-thread-button");
             if (newThreadButton) {
                 newThreadButton.addEventListener("click", () => {
-                    // Corrected to navigate to your figure selection page, passing the user_id
                     window.location.href = `/figures/ask?user_id=${userId}`;
                 });
             }
@@ -110,9 +109,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     threads.forEach((thread) => {
                         const item = document.createElement("div");
                         item.className = "thread-box";
-                        // This link should point to your frontend route for viewing a thread
+                        // CORRECTED: This link now points to the backend URL to prevent 404 errors.
                         item.innerHTML = `
-                            <a href="/thread/${thread.id}">${thread.title || "Untitled Thread"}</a>
+                            <a href="${backendUrl}/thread/${thread.id}">${thread.title || "Untitled Thread"}</a>
                             <p>Created: ${new Date(thread.created_at).toLocaleString()}</p>
                         `;
                         threadsList.appendChild(item);
@@ -143,18 +142,13 @@ document.addEventListener("DOMContentLoaded", () => {
         chatForm.addEventListener("submit", async (event) => {
             event.preventDefault();
 
-            // --- START OF FIX ---
-            // First, get the token and verify it exists.
+            // CORRECTED: Verify token exists before making a protected API call.
             const token = localStorage.getItem("placesInTimeToken");
-
-            // If there's no token, the user is not logged in.
-            // Redirect them to the login page.
             if (!token) {
                 alert("Your session has expired. Please log in again.");
-                window.location.href = "/"; // Redirect to the root/login page
-                return; // Stop the function here
+                window.location.href = "/";
+                return;
             }
-            // --- END OF FIX ---
 
             const messageText = messageInput.value.trim();
             if (!messageText) return;
@@ -176,7 +170,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}` // Now we know `token` is not null
+                        'Authorization': `Bearer ${token}`
                     },
                     body: JSON.stringify({
                         user_id: parseInt(userId),
@@ -189,8 +183,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 thinkingIndicator.style.display = "none";
                 submitButton.disabled = false;
 
+                // CORRECTED: Handle 401 Unauthorized errors specifically.
                 if (response.status === 401) {
-                    // Handle the case where the token is expired/invalid on the server
                     alert("Your session is invalid. Please log in again.");
                     localStorage.removeItem("placesInTimeToken");
                     window.location.href = "/";
@@ -201,15 +195,12 @@ document.addEventListener("DOMContentLoaded", () => {
                     const newChatMessage = await response.json();
                     appendMessageToChat('assistant', figureName, newChatMessage.message);
 
-                    // If this was the first message, a new thread was created.
-                    // Update the hidden input and the URL.
                     if (!threadId && newChatMessage.thread_id) {
                         const threadIdInput = document.getElementById("thread_id");
                         if (threadIdInput) {
                            threadIdInput.value = newChatMessage.thread_id;
                         }
-                        // Also update the browser's URL to reflect the new thread_id
-                        // This prevents creating a new thread on every subsequent message
+                        // Update the browser's URL to avoid creating new threads on every message.
                         window.history.pushState({}, '', `/thread/${newChatMessage.thread_id}`);
                     }
                 } else {
