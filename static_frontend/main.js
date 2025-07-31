@@ -7,14 +7,12 @@ document.addEventListener("DOMContentLoaded", () => {
         return 'https://places-backend-o8ym.onrender.com';
     };
 
-
     const backendUrl = getBackendUrl();
     const pathname = window.location.pathname;
 
     // --- LOGIN & REGISTER LOGIC ---
     const authForm = document.getElementById("auth-form");
     if (authForm) {
-        // ... (This part of your code is correct and unchanged)
         const toggleLink = document.getElementById("toggle-auth");
         const formTitle = document.getElementById("form-title");
         const messageBox = document.getElementById("message");
@@ -70,7 +68,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // --- THREADS PAGE LOGIC ---
     if (pathname.includes("/user/") && pathname.includes("/threads")) {
-        // ... (This part of your code is correct and unchanged)
         const userIdMatch = pathname.match(/\/user\/(\d+)\/threads/);
         const userId = userIdMatch ? userIdMatch[1] : null;
 
@@ -78,7 +75,8 @@ document.addEventListener("DOMContentLoaded", () => {
             const newThreadButton = document.getElementById("new-thread-button");
             if (newThreadButton) {
                 newThreadButton.addEventListener("click", () => {
-                    window.location.href = `${backendUrl}/figures/ask?user_id=${userId}`;
+                    // Corrected to navigate to your figure selection page, passing the user_id
+                    window.location.href = `/figures/ask?user_id=${userId}`;
                 });
             }
 
@@ -112,8 +110,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     threads.forEach((thread) => {
                         const item = document.createElement("div");
                         item.className = "thread-box";
+                        // This link should point to your frontend route for viewing a thread
                         item.innerHTML = `
-                            <a href="${backendUrl}/thread/${thread.id}">${thread.title || "Untitled Thread"}</a>
+                            <a href="/thread/${thread.id}">${thread.title || "Untitled Thread"}</a>
                             <p>Created: ${new Date(thread.created_at).toLocaleString()}</p>
                         `;
                         threadsList.appendChild(item);
@@ -143,6 +142,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
         chatForm.addEventListener("submit", async (event) => {
             event.preventDefault();
+
+            // --- START OF FIX ---
+            // First, get the token and verify it exists.
+            const token = localStorage.getItem("placesInTimeToken");
+
+            // If there's no token, the user is not logged in.
+            // Redirect them to the login page.
+            if (!token) {
+                alert("Your session has expired. Please log in again.");
+                window.location.href = "/"; // Redirect to the root/login page
+                return; // Stop the function here
+            }
+            // --- END OF FIX ---
+
             const messageText = messageInput.value.trim();
             if (!messageText) return;
 
@@ -151,7 +164,6 @@ document.addEventListener("DOMContentLoaded", () => {
             const figureSlug = document.getElementById("figure_slug").value;
             const figureHeader = document.querySelector(".figure-text-container h1");
             const figureName = figureHeader ? figureHeader.textContent.replace('Chat with ', '') : 'Historical Guide';
-            const token = localStorage.getItem("placesInTimeToken");
 
             thinkingIndicator.textContent = `${figureName} is thinking...`;
             thinkingIndicator.style.display = "block";
@@ -160,15 +172,16 @@ document.addEventListener("DOMContentLoaded", () => {
             messageInput.value = "";
 
             try {
-                // UPDATED: This fetch call now includes the Authorization header
                 const response = await fetch(`${backendUrl}/figures/ask`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}` // <-- This line was added
+                        'Authorization': `Bearer ${token}` // Now we know `token` is not null
                     },
                     body: JSON.stringify({
-                        user_id: parseInt(userId), message: messageText, figure_slug: figureSlug,
+                        user_id: parseInt(userId),
+                        message: messageText,
+                        figure_slug: figureSlug,
                         thread_id: threadId ? parseInt(threadId) : null
                     })
                 });
@@ -176,19 +189,38 @@ document.addEventListener("DOMContentLoaded", () => {
                 thinkingIndicator.style.display = "none";
                 submitButton.disabled = false;
 
+                if (response.status === 401) {
+                    // Handle the case where the token is expired/invalid on the server
+                    alert("Your session is invalid. Please log in again.");
+                    localStorage.removeItem("placesInTimeToken");
+                    window.location.href = "/";
+                    return;
+                }
+
                 if (response.ok) {
                     const newChatMessage = await response.json();
                     appendMessageToChat('assistant', figureName, newChatMessage.message);
+
+                    // If this was the first message, a new thread was created.
+                    // Update the hidden input and the URL.
                     if (!threadId && newChatMessage.thread_id) {
-                        document.getElementById("thread_id").value = newChatMessage.thread_id;
+                        const threadIdInput = document.getElementById("thread_id");
+                        if (threadIdInput) {
+                           threadIdInput.value = newChatMessage.thread_id;
+                        }
+                        // Also update the browser's URL to reflect the new thread_id
+                        // This prevents creating a new thread on every subsequent message
+                        window.history.pushState({}, '', `/thread/${newChatMessage.thread_id}`);
                     }
                 } else {
-                     appendMessageToChat('assistant', 'Error', 'Sorry, an error occurred.');
+                     const errorData = await response.json();
+                     appendMessageToChat('assistant', 'Error', `Sorry, an error occurred: ${errorData.detail || 'Unknown server error'}`);
                 }
             } catch (error) {
                  thinkingIndicator.style.display = "none";
                  submitButton.disabled = false;
                  appendMessageToChat('assistant', 'Error', 'Could not connect to the server.');
+                 console.error("Fetch error:", error);
             }
         });
 
